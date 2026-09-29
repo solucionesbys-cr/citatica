@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
@@ -67,6 +67,14 @@ const HORARIO_INICIAL: DiaHorario[] = [
 ];
 
 export default function HorariosPage() {
+  return (
+    <Suspense fallback={<PantallaCarga />}>
+      <HorariosContent />
+    </Suspense>
+  );
+}
+
+function HorariosContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -462,6 +470,14 @@ export default function HorariosPage() {
           </p>
         </section>
       </div>
+    </main>
+  );
+}
+
+function PantallaCarga() {
+  return (
+    <main style={pantallaCargando}>
+      <p>Cargando horario...</p>
     </main>
   );
 }

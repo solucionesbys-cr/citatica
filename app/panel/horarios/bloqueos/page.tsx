@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
@@ -19,6 +19,14 @@ type Bloqueo = {
 };
 
 export default function BloqueosPage() {
+  return (
+    <Suspense fallback={<PantallaCarga />}>
+      <BloqueosContent />
+    </Suspense>
+  );
+}
+
+function BloqueosContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -566,6 +574,14 @@ export default function BloqueosPage() {
           </p>
         </section>
       </div>
+    </main>
+  );
+}
+
+function PantallaCarga() {
+  return (
+    <main style={styles.centroPantalla}>
+      Cargando bloqueos...
     </main>
   );
 }

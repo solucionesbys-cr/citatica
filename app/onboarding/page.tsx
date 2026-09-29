@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
+  Suspense,
   useEffect,
   useMemo,
   useState,
@@ -28,6 +29,14 @@ type Plan = {
 };
 
 export default function OnboardingPage() {
+  return (
+    <Suspense fallback={<PantallaCarga />}>
+      <OnboardingContent />
+    </Suspense>
+  );
+}
+
+function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -65,9 +74,6 @@ export default function OnboardingPage() {
       setMensaje("");
       setTipoMensaje("");
 
-      /*
-       * Verificar sesión
-       */
       const {
         data: { user },
         error: userError,
@@ -78,10 +84,6 @@ export default function OnboardingPage() {
         return;
       }
 
-      /*
-       * Si el usuario ya tiene negocio,
-       * evitar crear otro accidentalmente.
-       */
       const { data: membresia } = await supabase
         .from("business_members")
         .select("business_id")
@@ -94,15 +96,14 @@ export default function OnboardingPage() {
         return;
       }
 
-      /*
-       * Cargar categorías
-       */
-      const { data: categoriasData, error: categoriasError } =
-        await supabase
-          .from("business_categories")
-          .select("id, name, slug")
-          .eq("is_active", true)
-          .order("sort_order");
+      const {
+        data: categoriasData,
+        error: categoriasError,
+      } = await supabase
+        .from("business_categories")
+        .select("id, name, slug")
+        .eq("is_active", true)
+        .order("sort_order");
 
       if (categoriasError) {
         setMensaje(
@@ -115,9 +116,6 @@ export default function OnboardingPage() {
 
       setCategorias(categoriasData || []);
 
-      /*
-       * Cargar plan seleccionado
-       */
       if (codigoPlan) {
         const { data: planData, error: planError } =
           await supabase
@@ -194,9 +192,6 @@ export default function OnboardingPage() {
       return;
     }
 
-    /*
-     * Protección contra creación duplicada
-     */
     const { data: membresiaExistente } =
       await supabase
         .from("business_members")
@@ -219,14 +214,6 @@ export default function OnboardingPage() {
       6
     )}`;
 
-    /*
-     * Crear negocio utilizando la RPC existente.
-     *
-     * IMPORTANTE:
-     * El plan todavía NO se guarda aquí porque
-     * create_business_with_defaults actualmente
-     * no recibe p_plan_code.
-     */
     const { error } = await supabase.rpc(
       "create_business_with_defaults",
       {
@@ -248,13 +235,6 @@ export default function OnboardingPage() {
       return;
     }
 
-    /*
-     * Guardamos temporalmente el plan elegido
-     * en el navegador.
-     *
-     * Posteriormente lo cambiaremos por una
-     * suscripción real almacenada en Supabase.
-     */
     window.localStorage.setItem(
       "citatica:selected-plan",
       codigoPlan
@@ -273,41 +253,7 @@ export default function OnboardingPage() {
   }
 
   if (cargandoPagina) {
-    return (
-      <main
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#F6F9FF",
-          fontFamily:
-            "var(--font-geist-sans), Arial, sans-serif",
-        }}
-      >
-        <div
-          style={{
-            textAlign: "center",
-          }}
-        >
-          <Image
-            src="/brand/citatica-icon.png"
-            alt="CitaTica"
-            width={70}
-            height={70}
-          />
-
-          <p
-            style={{
-              color: "#667085",
-              marginTop: "18px",
-            }}
-          >
-            Preparando tu espacio...
-          </p>
-        </div>
-      </main>
-    );
+    return <PantallaCarga />;
   }
 
   return (
@@ -327,7 +273,6 @@ export default function OnboardingPage() {
           margin: "0 auto",
         }}
       >
-        {/* LOGO */}
         <div
           style={{
             textAlign: "center",
@@ -349,7 +294,6 @@ export default function OnboardingPage() {
           </Link>
         </div>
 
-        {/* PLAN */}
         {plan ? (
           <div
             style={{
@@ -436,7 +380,6 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* FORMULARIO */}
         <div
           style={{
             background: "#FFFFFF",
@@ -579,10 +522,6 @@ export default function OnboardingPage() {
                   cargando || !codigoPlan
                     ? "not-allowed"
                     : "pointer",
-                boxShadow:
-                  cargando || !codigoPlan
-                    ? "none"
-                    : "0 10px 24px rgba(0,102,255,0.20)",
               }}
             >
               {cargando
@@ -634,6 +573,40 @@ export default function OnboardingPage() {
             ← Volver a los planes
           </Link>
         </div>
+      </div>
+    </main>
+  );
+}
+
+function PantallaCarga() {
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#F6F9FF",
+        fontFamily:
+          "var(--font-geist-sans), Arial, sans-serif",
+      }}
+    >
+      <div style={{ textAlign: "center" }}>
+        <Image
+          src="/brand/citatica-icon.png"
+          alt="CitaTica"
+          width={70}
+          height={70}
+        />
+
+        <p
+          style={{
+            color: "#667085",
+            marginTop: "18px",
+          }}
+        >
+          Preparando tu espacio...
+        </p>
       </div>
     </main>
   );

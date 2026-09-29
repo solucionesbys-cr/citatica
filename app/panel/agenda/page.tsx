@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
@@ -139,6 +139,14 @@ function horaDesdeMinutos(total: number) {
 }
 
 export default function AgendaPage() {
+  return (
+    <Suspense fallback={<PantallaCargaAgenda />}>
+      <AgendaContent />
+    </Suspense>
+  );
+}
+
+function AgendaContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -2008,6 +2016,15 @@ export default function AgendaPage() {
           )}
         </section>
       </div>
+    </main>
+  );
+}
+
+
+function PantallaCargaAgenda() {
+  return (
+    <main style={pantallaCargando}>
+      <p>Cargando agenda...</p>
     </main>
   );
 }
