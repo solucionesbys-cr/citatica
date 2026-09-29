@@ -57,7 +57,7 @@ const businessTypes = [
     title: "Tatuajes y piercing",
     text: "Sesiones, consultas y reservas por profesional.",
     image:
-      "https://images.unsplash.com/photo-1590246814883-57c511fcb7d3?auto=format&fit=crop&w=1200&q=85",
+      "https://images.unsplash.com/photo-1732440290046-cc29dfe9f6c2?auto=format&fit=crop&w=1200&q=85",
   },
 ];
 
