@@ -175,14 +175,16 @@ export default function PanelPage() {
       `)
       .eq("user_id", user.id)
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (miembroError || !miembro) {
-      setError(
-        miembroError?.message ||
-          "No se encontró un negocio asociado al usuario."
-      );
+    if (miembroError) {
+      setError(miembroError.message);
       setCargando(false);
+      return;
+    }
+
+    if (!miembro) {
+      router.replace("/planes");
       return;
     }
 
