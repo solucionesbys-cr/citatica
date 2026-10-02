@@ -95,10 +95,55 @@ function OnboardingContent() {
         .limit(1)
         .maybeSingle();
 
-      if (membresia?.business_id) {
-        router.push("/panel");
-        return;
+     if (membresia?.business_id) {
+  const requierePago =
+    codigoPlan === "NEGOCIO" ||
+    codigoPlan === "PRO";
+
+  if (requierePago) {
+    setMensaje(
+      "Preparando el pago seguro con GreenPay..."
+    );
+    setTipoMensaje("success");
+
+    const respuestaPago = await fetch(
+      "/api/greenpay/create-order",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          businessId: membresia.business_id,
+          planCode: codigoPlan,
+          billingCycle,
+        }),
       }
+    );
+
+    const pago = await respuestaPago.json();
+
+    if (
+      respuestaPago.ok &&
+      pago?.checkoutUrl
+    ) {
+      window.location.href =
+        pago.checkoutUrl;
+      return;
+    }
+
+    setMensaje(
+      pago?.error ||
+        "No pudimos iniciar el pago."
+    );
+    setTipoMensaje("error");
+    setCargandoPagina(false);
+    return;
+  }
+
+  router.push("/panel");
+  return;
+}
 
       const {
         data: categoriasData,
