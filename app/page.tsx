@@ -37,24 +37,28 @@ const features = [
 const businessTypes = [
   {
     title: "Barberías",
+    slug: "barberias",
     text: "Cortes, barba y servicios especializados.",
     image:
       "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=1200&q=85",
   },
   {
     title: "Salones de belleza",
+    slug: "salones-de-belleza",
     text: "Cabello, color, tratamientos y estilismo.",
     image:
       "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1200&q=85",
   },
   {
     title: "Uñas y estética",
+    slug: "unas-y-estetica",
     text: "Manicure, pedicure y servicios de belleza.",
     image:
       "https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=1200&q=85",
   },
   {
     title: "Tatuajes y piercing",
+    slug: "tatuajes-y-piercing",
     text: "Sesiones, consultas y reservas por profesional.",
     image:
       "https://images.unsplash.com/photo-1732440290046-cc29dfe9f6c2?auto=format&fit=crop&w=1200&q=85",
@@ -103,7 +107,10 @@ export default function Home() {
               Cómo funciona
             </a>
             <a href="#negocios" className="transition hover:text-slate-950">
-              Para negocios
+              Explorar negocios
+            </a>
+            <a href="#publicar" className="transition hover:text-slate-950">
+              Para emprendedores
             </a>
           </nav>
 
@@ -237,7 +244,12 @@ export default function Home() {
 
           <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             {businessTypes.map((item) => (
-              <article key={item.title} className="group overflow-hidden rounded-3xl bg-white/5 ring-1 ring-white/10">
+              <Link
+                key={item.title}
+                href={`/negocios/${item.slug}`}
+                className="group overflow-hidden rounded-3xl bg-white/5 ring-1 ring-white/10 transition hover:-translate-y-1 hover:bg-white/10"
+                aria-label={`Ver negocios de ${item.title}`}
+              >
                 <div className="overflow-hidden">
                   <img
                     src={item.image}
@@ -246,10 +258,14 @@ export default function Home() {
                   />
                 </div>
                 <div className="p-5">
-                  <h3 className="text-xl font-black">{item.title}</h3>
+                  <div className="flex items-center justify-between gap-4">
+                    <h3 className="text-xl font-black">{item.title}</h3>
+                    <span className="text-xl text-[#22C1F6] transition group-hover:translate-x-1">→</span>
+                  </div>
                   <p className="mt-2 text-sm leading-6 text-slate-300">{item.text}</p>
+                  <p className="mt-4 text-sm font-bold text-[#22C1F6]">Ver emprendedores</p>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         </div>
@@ -319,6 +335,49 @@ export default function Home() {
         </div>
       </section>
 
+      <section id="publicar" className="border-y border-slate-200 bg-white py-20 lg:py-24">
+        <div className="mx-auto grid max-w-7xl gap-10 px-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
+          <div>
+            <p className="text-sm font-black uppercase tracking-[0.2em] text-[#0066FF]">Para emprendedores</p>
+            <h2 className="mt-4 text-4xl font-black tracking-tight text-[#042A6B] md:text-5xl">
+              Publique su negocio y empiece a recibir reservas.
+            </h2>
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
+              Cree su perfil, agregue servicios, profesionales y horarios. Cuando esté listo, comparta su enlace y permita que nuevos clientes también lo encuentren por categoría en CitaTica.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/planes"
+                className="inline-flex items-center justify-center rounded-2xl bg-[#0066FF] px-6 py-4 font-black text-white shadow-lg shadow-[#0066FF]/20 transition hover:-translate-y-0.5 hover:bg-[#0058dc]"
+              >
+                Publicar mi negocio
+              </Link>
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-4 font-bold text-slate-700 transition hover:bg-slate-50"
+              >
+                Ya tengo una cuenta
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {[
+              ["01", "Cree su perfil", "Nombre, categoría, logo y datos del negocio."],
+              ["02", "Agregue sus servicios", "Precios, duración y profesionales disponibles."],
+              ["03", "Defina sus horarios", "Días de atención, disponibilidad y bloqueos."],
+              ["04", "Publique y comparta", "Enlace propio, WhatsApp y presencia por categoría."],
+            ].map(([numero, titulo, texto]) => (
+              <div key={numero} className="rounded-3xl border border-slate-200 bg-[#F8FAFC] p-6">
+                <span className="text-sm font-black text-[#0066FF]">{numero}</span>
+                <h3 className="mt-3 text-xl font-black text-[#042A6B]">{titulo}</h3>
+                <p className="mt-2 leading-7 text-slate-600">{texto}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="bg-white py-20 lg:py-24">
         <div className="mx-auto max-w-5xl px-5 text-center lg:px-8">
           <div className="rounded-[36px] bg-[#042A6B] px-7 py-14 text-white md:px-14 md:py-16">
@@ -341,26 +400,58 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="border-t border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-8 px-5 py-10 md:flex-row md:items-center md:justify-between lg:px-8">
-          <div className="flex items-center gap-4">
-            <Image
-              src="/brand/citatica-logo.png"
-              alt="CitaTica"
-              width={190}
-              height={60}
-              className="h-auto w-[150px]"
-            />
-            <div className="hidden text-sm text-slate-500 sm:block">
-              Reservas fáciles para negocios de Costa Rica.
+      <footer className="border-t border-slate-200 bg-[#031f50] text-white">
+        <div className="mx-auto max-w-7xl px-5 py-14 lg:px-8">
+          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <Image
+                src="/brand/citatica-logo.png"
+                alt="CitaTica"
+                width={190}
+                height={60}
+                className="h-auto w-[155px] brightness-0 invert"
+              />
+              <p className="mt-5 max-w-xs text-sm leading-6 text-slate-300">
+                Tus citas, tu negocio, en un solo lugar. Reservas fáciles para negocios y clientes de Costa Rica.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-black">Explorar</h3>
+              <div className="mt-4 flex flex-col gap-3 text-sm text-slate-300">
+                <Link href="/negocios/barberias" className="hover:text-white">Barberías</Link>
+                <Link href="/negocios/salones-de-belleza" className="hover:text-white">Salones de belleza</Link>
+                <Link href="/negocios/unas-y-estetica" className="hover:text-white">Uñas y estética</Link>
+                <Link href="/negocios/tatuajes-y-piercing" className="hover:text-white">Tatuajes y piercing</Link>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-black">Para negocios</h3>
+              <div className="mt-4 flex flex-col gap-3 text-sm text-slate-300">
+                <Link href="/planes" className="hover:text-white">Publicar mi negocio</Link>
+                <a href="#como-funciona" className="hover:text-white">Cómo funciona</a>
+                <Link href="/planes" className="hover:text-white">Planes</Link>
+                <Link href="/login" className="hover:text-white">Iniciar sesión</Link>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-black">Legal y ayuda</h3>
+              <div className="mt-4 flex flex-col gap-3 text-sm text-slate-300">
+                <Link href="/terminos" className="hover:text-white">Términos y condiciones</Link>
+                <Link href="/privacidad" className="hover:text-white">Política de privacidad</Link>
+                <Link href="/cookies" className="hover:text-white">Política de cookies</Link>
+                <Link href="/cancelaciones" className="hover:text-white">Política de cancelaciones</Link>
+                <Link href="/preguntas-frecuentes" className="hover:text-white">Preguntas frecuentes</Link>
+                <Link href="/contacto" className="hover:text-white">Contacto y soporte</Link>
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-slate-500">
-            <a href="#funciones" className="hover:text-slate-900">Funciones</a>
-            <a href="#como-funciona" className="hover:text-slate-900">Cómo funciona</a>
-            <Link href="/planes" className="hover:text-slate-900">Planes</Link>
-            <Link href="/login" className="hover:text-slate-900">Iniciar sesión</Link>
+          <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+            <span>© 2026 CitaTica. Todos los derechos reservados.</span>
+            <span>Hecho para negocios de Costa Rica 🇨🇷</span>
           </div>
         </div>
       </footer>

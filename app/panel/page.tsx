@@ -143,6 +143,7 @@ export default function PanelPage() {
 
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  const [enlaceCopiado, setEnlaceCopiado] = useState(false);
 
   useEffect(() => {
     cargarPanel();
@@ -600,6 +601,39 @@ export default function PanelPage() {
     return Math.min(100, Math.round((usado / limite) * 100));
   }
 
+  const enlaceReservas = useMemo(() => {
+    if (!negocio?.slug || typeof window === "undefined") return "";
+    return `${window.location.origin}/reservar/${negocio.slug}`;
+  }, [negocio?.slug]);
+
+  async function copiarEnlaceReservas() {
+    if (!enlaceReservas) return;
+
+    try {
+      await navigator.clipboard.writeText(enlaceReservas);
+      setEnlaceCopiado(true);
+      window.setTimeout(() => setEnlaceCopiado(false), 1800);
+    } catch (error) {
+      console.error("No se pudo copiar el enlace de reservas:", error);
+    }
+  }
+
+  function abrirPaginaReservas() {
+    if (!enlaceReservas) return;
+    window.open(enlaceReservas, "_blank", "noopener,noreferrer");
+  }
+
+  function compartirReservasWhatsApp() {
+    if (!enlaceReservas) return;
+
+    const mensaje = `Reserva tu cita en ${negocio?.business_name || "nuestro negocio"}: ${enlaceReservas}`;
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(mensaje)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  }
+
   async function cerrarSesion() {
     await supabase.auth.signOut();
     router.push("/login");
@@ -799,6 +833,52 @@ export default function PanelPage() {
             texto="Equipo activo"
             onClick={() => router.push("/panel/profesionales")}
           />
+        </section>
+
+        <section style={reservasPanelStyle}>
+          <div style={reservasContenidoStyle}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={reservasEtiquetaStyle}>RESERVAS EN LÍNEA</div>
+              <h2 style={reservasTituloStyle}>Mi página de reservas</h2>
+              <p style={reservasDescripcionStyle}>
+                Comparta este enlace para que sus clientes reserven una cita
+                directamente con su negocio.
+              </p>
+
+              <div style={reservasUrlStyle}>
+                {enlaceReservas || "Preparando enlace de reservas..."}
+              </div>
+            </div>
+
+            <div style={reservasAccionesStyle}>
+              <button
+                type="button"
+                onClick={copiarEnlaceReservas}
+                style={reservasBotonPrincipalStyle}
+                disabled={!enlaceReservas}
+              >
+                {enlaceCopiado ? "✓ Copiado" : "Copiar enlace"}
+              </button>
+
+              <button
+                type="button"
+                onClick={abrirPaginaReservas}
+                style={reservasBotonStyle}
+                disabled={!enlaceReservas}
+              >
+                Abrir página
+              </button>
+
+              <button
+                type="button"
+                onClick={compartirReservasWhatsApp}
+                style={reservasBotonWhatsappStyle}
+                disabled={!enlaceReservas}
+              >
+                WhatsApp
+              </button>
+            </div>
+          </div>
         </section>
 
         <section style={estadisticasPanelStyle}>
@@ -1078,10 +1158,24 @@ export default function PanelPage() {
 
               <Boton
                 texto="Profesionales"
-                descripcion="Equipo, horarios y bloqueos"
+                descripcion="Administre su equipo"
                 onClick={() =>
                   router.push("/panel/profesionales")
                 }
+              />
+
+              <Boton
+                texto="Horarios y disponibilidad"
+                descripcion="Atención, disponibilidad y bloqueos"
+                onClick={() =>
+                  router.push("/panel/profesionales")
+                }
+              />
+
+              <Boton
+                texto="Mi página de reservas"
+                descripcion="Copiar, abrir o compartir el enlace"
+                onClick={abrirPaginaReservas}
               />
 
               <Boton
@@ -1474,6 +1568,90 @@ const tarjetaTextoStyle: React.CSSProperties = {
   margin: "7px 0 0",
   color: "#98a2b3",
   fontSize: "12px",
+};
+
+const reservasPanelStyle: React.CSSProperties = {
+  marginBottom: "28px",
+  padding: "24px",
+  borderRadius: "18px",
+  background: "linear-gradient(135deg, #eef7ff 0%, #f4fffb 100%)",
+  border: "1px solid #cfe5ff",
+  boxShadow: "0 8px 24px rgba(0,102,255,0.07)",
+};
+
+const reservasContenidoStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: "22px",
+  flexWrap: "wrap",
+};
+
+const reservasEtiquetaStyle: React.CSSProperties = {
+  color: "#0066ff",
+  fontSize: "11px",
+  fontWeight: "800",
+  letterSpacing: "0.9px",
+  marginBottom: "7px",
+};
+
+const reservasTituloStyle: React.CSSProperties = {
+  margin: 0,
+  color: "#101828",
+  fontSize: "21px",
+};
+
+const reservasDescripcionStyle: React.CSSProperties = {
+  margin: "7px 0 12px",
+  color: "#667085",
+  fontSize: "14px",
+  lineHeight: 1.5,
+};
+
+const reservasUrlStyle: React.CSSProperties = {
+  background: "rgba(255,255,255,0.88)",
+  border: "1px solid #d0d5dd",
+  borderRadius: "10px",
+  padding: "11px 13px",
+  color: "#344054",
+  fontSize: "13px",
+  overflowWrap: "anywhere",
+};
+
+const reservasAccionesStyle: React.CSSProperties = {
+  display: "flex",
+  gap: "9px",
+  flexWrap: "wrap",
+};
+
+const reservasBotonPrincipalStyle: React.CSSProperties = {
+  border: "none",
+  background: "#0066ff",
+  color: "#ffffff",
+  padding: "11px 15px",
+  borderRadius: "10px",
+  cursor: "pointer",
+  fontWeight: "700",
+};
+
+const reservasBotonStyle: React.CSSProperties = {
+  border: "1px solid #b9c3d0",
+  background: "#ffffff",
+  color: "#101828",
+  padding: "11px 15px",
+  borderRadius: "10px",
+  cursor: "pointer",
+  fontWeight: "700",
+};
+
+const reservasBotonWhatsappStyle: React.CSSProperties = {
+  border: "1px solid #b7e4c7",
+  background: "#f0fff4",
+  color: "#137a42",
+  padding: "11px 15px",
+  borderRadius: "10px",
+  cursor: "pointer",
+  fontWeight: "700",
 };
 
 const estadisticasPanelStyle: React.CSSProperties = {

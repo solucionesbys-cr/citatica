@@ -43,6 +43,10 @@ function OnboardingContent() {
   const supabase = useMemo(() => createClient(), []);
 
   const codigoPlan = searchParams.get("plan") || "";
+  const billingCycle =
+    searchParams.get("billing") === "ANNUAL"
+      ? "ANNUAL"
+      : "MONTHLY";
 
   const [categorias, setCategorias] = useState<Categoria[]>(
     []
@@ -235,21 +239,98 @@ function OnboardingContent() {
       return;
     }
 
+    const { data: membresiaCreada, error: membresiaError } =
+      await supabase
+        .from("business_members")
+        .select("business_id")
+        .eq("user_id", user.id)
+        .limit(1)
+        .maybeSingle();
+
+    if (membresiaError || !membresiaCreada?.business_id) {
+      setMensaje(
+        "El negocio se creó, pero no pudimos identificarlo para continuar."
+      );
+      setTipoMensaje("error");
+      setCargando(false);
+      return;
+    }
+
+    const businessId = membresiaCreada.business_id;
+
     window.localStorage.setItem(
       "citatica:selected-plan",
       codigoPlan
     );
 
-    setMensaje(
-      "¡Negocio creado correctamente!"
+    window.localStorage.setItem(
+      "citatica:billing-cycle",
+      billingCycle
     );
 
-    setTipoMensaje("success");
-    setCargando(false);
+    const requierePago =
+      codigoPlan === "NEGOCIO" || codigoPlan === "PRO";
 
-    setTimeout(() => {
-      router.push("/panel");
-    }, 700);
+    if (!requierePago) {
+      setMensaje(
+        codigoPlan === "EMPRENDE"
+          ? "¡Negocio creado! Tu prueba de 15 días ya está lista."
+          : "¡Negocio creado correctamente!"
+      );
+      setTipoMensaje("success");
+      setCargando(false);
+
+      setTimeout(() => {
+        router.push("/panel");
+      }, 700);
+
+      return;
+    }
+
+    setMensaje(
+      "Negocio creado. Preparando el pago seguro con GreenPay..."
+    );
+    setTipoMensaje("success");
+
+    const respuestaPago = await fetch(
+      "/api/greenpay/create-order",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          businessId,
+          planCode: codigoPlan,
+          billingCycle,
+          customer: {
+            name:
+              user.user_metadata?.full_name ||
+              user.email ||
+              "Cliente CitaTica",
+            email: user.email || undefined,
+          },
+        }),
+      }
+    );
+
+    const pago = await respuestaPago.json();
+
+    if (!respuestaPago.ok || !pago?.session) {
+      setMensaje(
+        pago?.error ||
+          "El negocio se creó, pero no pudimos iniciar el pago. Puedes intentarlo nuevamente desde tu panel."
+      );
+      setTipoMensaje("error");
+      setCargando(false);
+      return;
+    }
+
+    const checkoutUrl =
+      pago.checkoutUrl ||
+      `https://sandbox-checkoutform.greenpay.me/${pago.session}`;
+
+    window.location.href = checkoutUrl;
   }
 
   if (cargandoPagina) {
@@ -338,9 +419,13 @@ function OnboardingContent() {
               >
                 ₡
                 {Number(
-                  plan.monthly_price
+                  billingCycle === "ANNUAL"
+                    ? plan.annual_price
+                    : plan.monthly_price
                 ).toLocaleString("es-CR")}
-                /mes
+                {billingCycle === "ANNUAL"
+                  ? "/año"
+                  : "/mes"}
               </span>
             </div>
 
@@ -525,7 +610,13 @@ function OnboardingContent() {
               }}
             >
               {cargando
-                ? "Creando tu negocio..."
+                ? codigoPlan === "NEGOCIO" ||
+                  codigoPlan === "PRO"
+                  ? "Preparando pago..."
+                  : "Creando tu negocio..."
+                : codigoPlan === "NEGOCIO" ||
+                  codigoPlan === "PRO"
+                ? "Crear mi negocio y continuar al pago"
                 : "Crear mi negocio"}
             </button>
           </form>
