@@ -190,8 +190,7 @@ return NextResponse.json(
       hasShippingAddress: Boolean(
         greenPayBody.additional?.customer?.shippingAddress
       ),
-      productCount: greenPayBody.additional?.products?.length || 0,
-    },
+      },
   },
   { status: 400 }
       );
