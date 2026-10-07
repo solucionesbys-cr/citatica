@@ -142,10 +142,17 @@ export async function POST(request: Request) {
         ? "https://checkoutv2.greenpay.me/createOrder"
         : "https://checkoutv2.greenpaysbx.me/createOrder";
 
-console.log("GREENPAY REQUEST:", {
-  ...greenPayBody,
-  secret: "***OCULTO***",
-});
+console.log(
+  "GREENPAY REQUEST JSON:",
+  JSON.stringify(
+    {
+      ...greenPayBody,
+      secret: "***OCULTO***",
+    },
+    null,
+    2
+  )
+);
 console.log("GREENPAY ENDPOINT:", endpoint);
 console.log("GREENPAY TERMINAL:", terminal);
 console.log("GREENPAY CURRENCY:", currency);
