@@ -98,7 +98,7 @@ export async function POST(request: Request) {
       "http://localhost:3000";
 
     const callback =
-      `${origin}/api/greenpay/callback`;
+  `${origin}/api/greenpay/callback/${orderReference}`;
 
    const greenPayBody = {
   secret: process.env.GREENPAY_SECRET,
@@ -108,7 +108,7 @@ export async function POST(request: Request) {
   currency,
   description: `CitaTica - Plan ${plan.name}`,
   orderReference,
-  callback: `${origin}/api/greenpay/callback`,
+  callback,
 
   additional: {
     customer: {

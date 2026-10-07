@@ -12,34 +12,38 @@ type EstadoPago =
   | "NOT_FOUND"
   | "ERROR";
 
-export default function PagoResultadoPage() {
+export default function PagoResultadoClient() {
   const searchParams = useSearchParams();
 
   const greenpay = searchParams.get("greenpay");
+  const orderReference = searchParams.get("orderReference");
 
   const [estado, setEstado] =
     useState<EstadoPago>("LOADING");
 
-  const [plan, setPlan] = useState<string | null>(null);
+  const [plan, setPlan] =
+    useState<string | null>(null);
 
   const [fechaFin, setFechaFin] =
     useState<string | null>(null);
 
   useEffect(() => {
-    if (!greenpay) {
+    if (!greenpay || !orderReference) {
       setEstado("NOT_FOUND");
       return;
     }
 
     let intentos = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let cancelado = false;
 
     const consultarPago = async () => {
       try {
         intentos++;
 
         const respuesta = await fetch(
-          `/api/greenpay/payment-status?response=${encodeURIComponent(
-            greenpay
+          `/api/greenpay/payment-status?orderReference=${encodeURIComponent(
+            orderReference
           )}`,
           {
             cache: "no-store",
@@ -47,6 +51,10 @@ export default function PagoResultadoPage() {
         );
 
         const datos = await respuesta.json();
+
+        if (cancelado) {
+          return;
+        }
 
         if (!respuesta.ok) {
           setEstado("ERROR");
@@ -74,23 +82,53 @@ export default function PagoResultadoPage() {
         }
 
         if (datos.status === "NOT_FOUND") {
-          setEstado("NOT_FOUND");
+          /*
+           * Puede ocurrir por unos segundos si el usuario
+           * regresa desde GreenPay antes de que el webhook
+           * termine de actualizar Supabase.
+           */
+          setEstado("PENDING");
+
+          if (intentos < 10) {
+            timer = setTimeout(
+              consultarPago,
+              3000
+            );
+          }
+
           return;
         }
 
         setEstado("PENDING");
 
         if (intentos < 10) {
-          setTimeout(consultarPago, 3000);
+          timer = setTimeout(
+            consultarPago,
+            3000
+          );
         }
       } catch (error) {
-        console.error(error);
-        setEstado("ERROR");
+        console.error(
+          "Error consultando estado del pago:",
+          error
+        );
+
+        if (!cancelado) {
+          setEstado("ERROR");
+        }
       }
     };
 
     consultarPago();
-  }, [greenpay]);
+
+    return () => {
+      cancelado = true;
+
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, [greenpay, orderReference]);
 
   const formatearFecha = (fecha: string) => {
     return new Intl.DateTimeFormat("es-CR", {
@@ -120,10 +158,9 @@ export default function PagoResultadoPage() {
             </h1>
 
             <p className="mt-4 text-slate-600">
-              GreenPay ya devolvió la respuesta a
-              CitaTica. Estamos verificando la
-              transacción antes de activar o actualizar
-              tu plan.
+              GreenPay ya devolvió la respuesta a CitaTica.
+              Estamos verificando la transacción antes de
+              activar o actualizar tu plan.
             </p>
 
             <p className="mt-3 text-sm text-slate-500">

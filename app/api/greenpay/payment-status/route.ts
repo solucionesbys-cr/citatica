@@ -1,4 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
+
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseAdmin = createClient(
@@ -13,27 +17,31 @@ const supabaseAdmin = createClient(
   }
 );
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: NextRequest
+) {
   try {
-    const { searchParams } = new URL(request.url);
-    const response = searchParams.get("response");
+    const { searchParams } = new URL(
+      request.url
+    );
 
-    if (!response) {
+    const orderReference =
+      searchParams.get("orderReference");
+
+    if (!orderReference) {
       return NextResponse.json(
-        { error: "Falta la respuesta de GreenPay." },
+        {
+          error:
+            "Falta la referencia de la orden.",
+        },
         { status: 400 }
       );
     }
 
-    /*
-      En este momento el callback visual nos entrega el parámetro "greenpay",
-      pero el pago en Supabase está identificado por provider_order_id.
-
-      Por ahora buscamos el pago más reciente realizado con GreenPay.
-      Luego podemos mejorar esto para asociarlo directamente al orderReference.
-    */
-
-    const { data: payment, error } = await supabaseAdmin
+    const {
+      data: payment,
+      error: paymentError,
+    } = await supabaseAdmin
       .from("payments")
       .select(`
         id,
@@ -44,19 +52,29 @@ export async function GET(request: NextRequest) {
         currency_code,
         plan_code,
         billing_cycle,
+        transaction_reference,
+        authorization_code,
         paid_at,
         created_at
       `)
+      .eq(
+        "provider_order_id",
+        orderReference
+      )
       .eq("provider", "GREENPAY")
-      .order("created_at", { ascending: false })
-      .limit(1)
       .maybeSingle();
 
-    if (error) {
-      console.error("Error consultando pago:", error);
+    if (paymentError) {
+      console.error(
+        "Error consultando pago:",
+        paymentError
+      );
 
       return NextResponse.json(
-        { error: "No pudimos consultar el pago." },
+        {
+          error:
+            "No pudimos consultar el pago.",
+        },
         { status: 500 }
       );
     }
@@ -70,7 +88,10 @@ export async function GET(request: NextRequest) {
     let subscription = null;
 
     if (payment.business_id) {
-      const { data } = await supabaseAdmin
+      const {
+        data,
+        error: subscriptionError,
+      } = await supabaseAdmin
         .from("business_subscriptions")
         .select(`
           plan_code,
@@ -79,8 +100,18 @@ export async function GET(request: NextRequest) {
           subscription_started_at,
           subscription_ends_at
         `)
-        .eq("business_id", payment.business_id)
+        .eq(
+          "business_id",
+          payment.business_id
+        )
         .maybeSingle();
+
+      if (subscriptionError) {
+        console.error(
+          "Error consultando suscripción:",
+          subscriptionError
+        );
+      }
 
       subscription = data;
     }
@@ -91,10 +122,15 @@ export async function GET(request: NextRequest) {
       subscription,
     });
   } catch (error) {
-    console.error("Error payment-status:", error);
+    console.error(
+      "Error payment-status:",
+      error
+    );
 
     return NextResponse.json(
-      { error: "Error interno." },
+      {
+        error: "Error interno.",
+      },
       { status: 500 }
     );
   }
