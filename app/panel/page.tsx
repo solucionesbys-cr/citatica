@@ -1541,9 +1541,10 @@ const usoPlanBarraRellenoStyle: React.CSSProperties = {
 const tarjetasGridStyle: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns:
-    "repeat(auto-fit, minmax(190px, 1fr))",
+    "repeat(auto-fit, minmax(min(100%, 190px), 1fr))",
   gap: "18px",
   marginBottom: "28px",
+  width: "100%",
 };
 
 const tarjetaStyle: React.CSSProperties = {
@@ -1661,10 +1662,13 @@ const reservasBotonWhatsappStyle: React.CSSProperties = {
 
 const estadisticasPanelStyle: React.CSSProperties = {
   background: "#ffffff",
-  padding: "28px",
+  padding: "clamp(18px, 4vw, 28px)",
   borderRadius: "18px",
   boxShadow: "0 6px 20px rgba(0,0,0,0.05)",
   marginBottom: "28px",
+  minWidth: 0,
+  width: "100%",
+  boxSizing: "border-box",
 };
 
 const estadisticasEncabezadoStyle: React.CSSProperties = {
@@ -1673,6 +1677,7 @@ const estadisticasEncabezadoStyle: React.CSSProperties = {
   alignItems: "flex-start",
   gap: "16px",
   marginBottom: "22px",
+  flexWrap: "wrap",
 };
 
 const textoSecundarioSinMargenStyle: React.CSSProperties = {
@@ -1693,9 +1698,10 @@ const periodoBadgeStyle: React.CSSProperties = {
 const metricasFinancierasGridStyle: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns:
-    "repeat(auto-fit, minmax(210px, 1fr))",
+    "repeat(auto-fit, minmax(min(100%, 210px), 1fr))",
   gap: "14px",
   marginBottom: "20px",
+  width: "100%",
 };
 
 const metricaStyle: React.CSSProperties = {
@@ -1729,14 +1735,19 @@ const metricaDescripcionStyle: React.CSSProperties = {
 const estadisticasDetalleGridStyle: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns:
-    "minmax(0, 1.25fr) minmax(280px, 0.75fr)",
+    "repeat(auto-fit, minmax(min(100%, 320px), 1fr))",
   gap: "16px",
+  width: "100%",
 };
 
 const subPanelStyle: React.CSSProperties = {
   border: "1px solid #eaecf0",
   borderRadius: "14px",
   padding: "19px",
+  minWidth: 0,
+  width: "100%",
+  boxSizing: "border-box",
+  overflow: "hidden",
 };
 
 const subTituloStyle: React.CSSProperties = {
@@ -1748,8 +1759,9 @@ const subTituloStyle: React.CSSProperties = {
 const estadoGridStyle: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns:
-    "repeat(auto-fit, minmax(130px, 1fr))",
+    "repeat(auto-fit, minmax(min(100%, 130px), 1fr))",
   gap: "9px",
+  width: "100%",
 };
 
 const estadoMiniStyle: React.CSSProperties = {
@@ -1776,6 +1788,7 @@ const rankingFilaStyle: React.CSSProperties = {
   justifyContent: "space-between",
   alignItems: "center",
   gap: "15px",
+  minWidth: 0,
 };
 
 const rankingEtiquetaStyle: React.CSSProperties = {
@@ -1789,6 +1802,7 @@ const rankingValorStyle: React.CSSProperties = {
   display: "block",
   color: "#101828",
   fontSize: "15px",
+  overflowWrap: "anywhere",
 };
 
 const rankingNumeroStyle: React.CSSProperties = {
