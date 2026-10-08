@@ -264,7 +264,7 @@ export default function PagoResultadoClient() {
             </Link>
           </div>
         ) : null}
-      </div>
+      </div>   
     </main>
   );
 }

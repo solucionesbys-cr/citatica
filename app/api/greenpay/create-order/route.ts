@@ -98,7 +98,7 @@ export async function POST(request: Request) {
       "http://localhost:3000";
 
     const callback =
-  `${origin}/api/greenpay/callback/${orderReference}`;
+  `${origin}/api/greenpay/callback/order/${orderReference}`;
 
    const greenPayBody = {
   secret: process.env.GREENPAY_SECRET,

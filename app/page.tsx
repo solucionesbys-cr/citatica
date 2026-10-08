@@ -36,6 +36,34 @@ const features = [
 
 const businessTypes = [
   {
+    title: "Médicos",
+    slug: "medicos",
+    text: "Consulta general, especialistas y atención por cita.",
+    image:
+      "https://images.unsplash.com/photo-1538108149393-fbbd81895907?auto=format&fit=crop&w=1200&q=85",
+  },
+  {
+    title: "Nutrición",
+    slug: "nutricion",
+    text: "Valoraciones, seguimiento y planes nutricionales.",
+    image:
+      "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=85",
+  },
+  {
+    title: "Odontología",
+    slug: "odontologia",
+    text: "Consultas, limpiezas, tratamientos y seguimiento.",
+    image:
+      "https://images.unsplash.com/photo-1606811971618-4486d14f3f99?auto=format&fit=crop&w=1200&q=85",
+  },
+  {
+    title: "Fisioterapia",
+    slug: "fisioterapia",
+    text: "Terapia física, rehabilitación y recuperación funcional.",
+    image:
+      "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=85",
+  },
+  {
     title: "Barberías",
     slug: "barberias",
     text: "Cortes, barba y servicios especializados.",
@@ -147,7 +175,7 @@ export default function Home() {
             </h1>
 
             <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600 md:text-xl">
-              CitaTica ayuda a barberías, salones, uñas, tatuajes y otros negocios a recibir reservas las 24 horas, organizar su agenda y atender mejor a sus clientes.
+              CitaTica ayuda a clínicas, consultorios, barberías, salones, gimnasios y otros negocios a recibir reservas las 24 horas, organizar su agenda y atender mejor a sus clientes.
             </p>
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -233,16 +261,16 @@ export default function Home() {
       <section id="negocios" className="bg-[#042A6B] py-20 text-white lg:py-24">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
           <div className="max-w-3xl">
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-[#22C1F6]">Para muchos tipos de negocio</p>
+            <p className="text-sm font-black uppercase tracking-[0.2em] text-[#22C1F6]">Salud, belleza y mucho más</p>
             <h2 className="mt-4 text-4xl font-black tracking-tight md:text-5xl">
-              Una plataforma que se adapta a tu forma de trabajar.
+              Una plataforma para profesionales, clínicas y negocios que trabajan con citas.
             </h2>
             <p className="mt-5 text-lg leading-8 text-slate-300">
-              Cada negocio puede mostrar su propia marca, servicios, equipo, precios y disponibilidad.
+              Desde medicina, nutrición y odontología hasta barberías, estética y bienestar. Cada negocio mantiene su propia marca, servicios, profesionales, horarios y disponibilidad.
             </p>
           </div>
 
-          <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4">
             {businessTypes.map((item) => (
               <Link
                 key={item.title}
@@ -419,10 +447,11 @@ export default function Home() {
             <div>
               <h3 className="font-black">Explorar</h3>
               <div className="mt-4 flex flex-col gap-3 text-sm text-slate-300">
+                <Link href="/negocios/medicos" className="hover:text-white">Médicos</Link>
+                <Link href="/negocios/nutricion" className="hover:text-white">Nutrición</Link>
+                <Link href="/negocios/odontologia" className="hover:text-white">Odontología</Link>
+                <Link href="/negocios/fisioterapia" className="hover:text-white">Fisioterapia</Link>
                 <Link href="/negocios/barberias" className="hover:text-white">Barberías</Link>
-                <Link href="/negocios/salones-de-belleza" className="hover:text-white">Salones de belleza</Link>
-                <Link href="/negocios/unas-y-estetica" className="hover:text-white">Uñas y estética</Link>
-                <Link href="/negocios/tatuajes-y-piercing" className="hover:text-white">Tatuajes y piercing</Link>
               </div>
             </div>
 

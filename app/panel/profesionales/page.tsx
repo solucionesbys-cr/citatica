@@ -41,6 +41,8 @@ type ProfesionalServicio = {
 type Profesional = {
   id: string;
   business_id: string;
+  primary_business_id: string;
+  relation_id: string;
   name: string;
   bio: string | null;
   specialty: string | null;
@@ -154,41 +156,109 @@ export default function ProfesionalesPage() {
   }
 
   async function cargarProfesionales(idNegocio: string) {
-    const { data, error } = await supabase
-      .from("professionals")
+    const { data: relaciones, error: relacionesError } = await supabase
+      .from("professional_businesses")
       .select(`
         id,
         business_id,
-        name,
-        bio,
-        specialty,
-        phone,
-        email,
-        photo_url,
-        booking_enabled,
         is_active,
+        booking_enabled,
         created_at,
-        professional_services (
+        professionals (
           id,
-          service_id,
+          business_id,
+          name,
+          bio,
+          specialty,
+          phone,
+          email,
+          photo_url,
+          booking_enabled,
           is_active,
-          services (
-            id,
-            name,
-            price,
-            duration_minutes
-          )
+          created_at
         )
       `)
       .eq("business_id", idNegocio)
       .order("created_at", { ascending: false });
 
-    if (error) {
-      setError(error.message);
+    if (relacionesError) {
+      setError(relacionesError.message);
       return;
     }
 
-    setProfesionales((data || []) as Profesional[]);
+    const profesionalesBase = (relaciones || [])
+      .map((relacion: any) => {
+        const profesional = Array.isArray(relacion.professionals)
+          ? relacion.professionals[0]
+          : relacion.professionals;
+
+        if (!profesional) return null;
+
+        return {
+          id: profesional.id,
+          business_id: idNegocio,
+          primary_business_id: profesional.business_id,
+          relation_id: relacion.id,
+          name: profesional.name,
+          bio: profesional.bio,
+          specialty: profesional.specialty,
+          phone: profesional.phone,
+          email: profesional.email,
+          photo_url: profesional.photo_url,
+          booking_enabled: relacion.booking_enabled,
+          is_active: relacion.is_active,
+          created_at: profesional.created_at,
+          professional_services: [] as ProfesionalServicio[],
+        } satisfies Profesional;
+      })
+      .filter(Boolean) as Profesional[];
+
+    if (profesionalesBase.length === 0) {
+      setProfesionales([]);
+      return;
+    }
+
+    const idsProfesionales = profesionalesBase.map((item) => item.id);
+
+    const { data: relacionesServicios, error: serviciosError } = await supabase
+      .from("professional_services")
+      .select(`
+        id,
+        professional_id,
+        service_id,
+        is_active,
+        services (
+          id,
+          name,
+          price,
+          duration_minutes
+        )
+      `)
+      .eq("business_id", idNegocio)
+      .in("professional_id", idsProfesionales);
+
+    if (serviciosError) {
+      setError(serviciosError.message);
+      return;
+    }
+
+    const serviciosPorProfesional = new Map<string, ProfesionalServicio[]>();
+
+    for (const relacion of relacionesServicios || []) {
+      const professionalId = (relacion as any).professional_id as string;
+      const actuales = serviciosPorProfesional.get(professionalId) || [];
+
+      actuales.push(relacion as ProfesionalServicio);
+      serviciosPorProfesional.set(professionalId, actuales);
+    }
+
+    setProfesionales(
+      profesionalesBase.map((profesional) => ({
+        ...profesional,
+        professional_services:
+          serviciosPorProfesional.get(profesional.id) || [],
+      }))
+    );
   }
 
   function validarImagen(file: File) {
@@ -299,6 +369,13 @@ export default function ProfesionalesPage() {
       return;
     }
 
+    if (profesional.primary_business_id !== businessId) {
+      setError(
+        "Este profesional está vinculado desde otro negocio. La foto principal debe editarse desde su perfil principal."
+      );
+      return;
+    }
+
     setFotoProcesandoId(profesional.id);
 
     let rutaNueva = "";
@@ -312,8 +389,7 @@ export default function ProfesionalesPage() {
         .update({
           photo_url: subida.publicUrl,
         })
-        .eq("id", profesional.id)
-        .eq("business_id", businessId);
+        .eq("id", profesional.id);
 
       if (updateError) {
         await supabase.storage.from(STORAGE_BUCKET).remove([subida.ruta]);
@@ -373,6 +449,14 @@ export default function ProfesionalesPage() {
 
     setError("");
     setMensaje("");
+
+    if (profesional.primary_business_id !== businessId) {
+      setError(
+        "Este profesional está vinculado desde otro negocio. La foto principal debe editarse desde su perfil principal."
+      );
+      return;
+    }
+
     setFotoProcesandoId(profesional.id);
 
     try {
@@ -381,8 +465,7 @@ export default function ProfesionalesPage() {
         .update({
           photo_url: null,
         })
-        .eq("id", profesional.id)
-        .eq("business_id", businessId);
+        .eq("id", profesional.id);
 
       if (updateError) {
         throw new Error(updateError.message);
@@ -494,7 +577,24 @@ export default function ProfesionalesPage() {
 
       profesionalCreadoId = profesionalCreado.id;
 
-      const relaciones = serviciosSeleccionados.map((serviceId) => ({
+      const { error: relacionNegocioError } = await supabase
+        .from("professional_businesses")
+        .insert({
+          professional_id: profesionalCreado.id,
+          business_id: businessId,
+          is_active: true,
+          booking_enabled: true,
+          role: "PROFESSIONAL",
+        });
+
+      if (relacionNegocioError) {
+        throw new Error(
+          "No se pudo vincular el profesional con el negocio: " +
+            relacionNegocioError.message
+        );
+      }
+
+      const relacionesServicios = serviciosSeleccionados.map((serviceId) => ({
         business_id: businessId,
         professional_id: profesionalCreado.id,
         service_id: serviceId,
@@ -503,13 +603,14 @@ export default function ProfesionalesPage() {
         is_active: true,
       }));
 
-      const { error: relacionError } = await supabase
+      const { error: relacionServiciosError } = await supabase
         .from("professional_services")
-        .insert(relaciones);
+        .insert(relacionesServicios);
 
-      if (relacionError) {
+      if (relacionServiciosError) {
         throw new Error(
-          "No se pudieron asignar los servicios: " + relacionError.message
+          "No se pudieron asignar los servicios: " +
+            relacionServiciosError.message
         );
       }
 
@@ -525,8 +626,7 @@ export default function ProfesionalesPage() {
           .update({
             photo_url: subida.publicUrl,
           })
-          .eq("id", profesionalCreado.id)
-          .eq("business_id", businessId);
+          .eq("id", profesionalCreado.id);
 
         if (updatePhotoError) {
           throw new Error(
@@ -543,7 +643,7 @@ export default function ProfesionalesPage() {
       setServiciosSeleccionados([]);
       limpiarFotoNueva();
 
-      setMensaje("Profesional creado correctamente.");
+      setMensaje("Profesional creado y vinculado correctamente.");
 
       await cargarProfesionales(businessId);
     } catch (err) {
@@ -559,10 +659,15 @@ export default function ProfesionalesPage() {
           .eq("business_id", businessId);
 
         await supabase
+          .from("professional_businesses")
+          .delete()
+          .eq("professional_id", profesionalCreadoId)
+          .eq("business_id", businessId);
+
+        await supabase
           .from("professionals")
           .delete()
-          .eq("id", profesionalCreadoId)
-          .eq("business_id", businessId);
+          .eq("id", profesionalCreadoId);
       }
 
       setError(
@@ -582,16 +687,23 @@ export default function ProfesionalesPage() {
     const nuevoEstado = !profesional.is_active;
 
     const { error } = await supabase
-      .from("professionals")
+      .from("professional_businesses")
       .update({
         is_active: nuevoEstado,
       })
-      .eq("id", profesional.id)
+      .eq("professional_id", profesional.id)
       .eq("business_id", businessId);
 
     if (error) {
       setError(error.message);
       return;
+    }
+
+    if (profesional.primary_business_id === businessId) {
+      await supabase
+        .from("professionals")
+        .update({ is_active: nuevoEstado })
+        .eq("id", profesional.id);
     }
 
     await cargarProfesionales(businessId);
@@ -604,16 +716,23 @@ export default function ProfesionalesPage() {
     const nuevoEstado = !profesional.booking_enabled;
 
     const { error } = await supabase
-      .from("professionals")
+      .from("professional_businesses")
       .update({
         booking_enabled: nuevoEstado,
       })
-      .eq("id", profesional.id)
+      .eq("professional_id", profesional.id)
       .eq("business_id", businessId);
 
     if (error) {
       setError(error.message);
       return;
+    }
+
+    if (profesional.primary_business_id === businessId) {
+      await supabase
+        .from("professionals")
+        .update({ booking_enabled: nuevoEstado })
+        .eq("id", profesional.id);
     }
 
     await cargarProfesionales(businessId);
@@ -673,7 +792,7 @@ export default function ProfesionalesPage() {
 
   async function eliminarProfesional(profesional: Profesional) {
     const confirmar = window.confirm(
-      "¿Está seguro de que desea eliminar este profesional?"
+      "¿Desea quitar este profesional de este negocio? Su perfil y sus citas en otros negocios no se eliminarán."
     );
 
     if (!confirmar) return;
@@ -681,34 +800,29 @@ export default function ProfesionalesPage() {
     setError("");
     setMensaje("");
 
-    const { error } = await supabase
-      .from("professionals")
+    const { error: serviciosError } = await supabase
+      .from("professional_services")
       .delete()
-      .eq("id", profesional.id)
+      .eq("professional_id", profesional.id)
       .eq("business_id", businessId);
 
-    if (error) {
-      setError(error.message);
+    if (serviciosError) {
+      setError(serviciosError.message);
       return;
     }
 
-    const rutaFoto = obtenerRutaStorage(profesional.photo_url);
+    const { error: relacionError } = await supabase
+      .from("professional_businesses")
+      .delete()
+      .eq("professional_id", profesional.id)
+      .eq("business_id", businessId);
 
-    if (rutaFoto) {
-      const { error: removeError } = await supabase.storage
-        .from(STORAGE_BUCKET)
-        .remove([rutaFoto]);
-
-      if (removeError) {
-        console.warn(
-          "El profesional se eliminó, pero no se pudo borrar su foto de Storage:",
-          removeError.message
-        );
-      }
+    if (relacionError) {
+      setError(relacionError.message);
+      return;
     }
 
-    setMensaje("Profesional eliminado correctamente.");
-
+    setMensaje("Profesional desvinculado de este negocio correctamente.");
     await cargarProfesionales(businessId);
   }
 
@@ -1047,7 +1161,8 @@ export default function ProfesionalesPage() {
                             )}
                           </div>
 
-                          <div style={fotoAccionesListaStyle}>
+                          {profesional.primary_business_id === businessId ? (
+                            <div style={fotoAccionesListaStyle}>
                             <label
                               style={{
                                 ...botonFotoListaStyle,
@@ -1103,6 +1218,11 @@ export default function ProfesionalesPage() {
                               </button>
                             )}
                           </div>
+                          ) : (
+                            <p style={perfilCompartidoStyle}>
+                              Perfil compartido
+                            </p>
+                          )}
                         </div>
 
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -1128,6 +1248,12 @@ export default function ProfesionalesPage() {
                               ? "Activo"
                               : "Inactivo"}
                           </span>
+
+                          {profesional.primary_business_id !== businessId && (
+                            <span style={compartidoStyle}>
+                              Compartido
+                            </span>
+                          )}
                         </div>
 
                         {profesional.specialty && (
@@ -1320,7 +1446,7 @@ export default function ProfesionalesPage() {
                           }
                           style={botonEliminarStyle}
                         >
-                          Eliminar
+                          Quitar del negocio
                         </button>
                       </div>
                     </div>
@@ -1769,6 +1895,22 @@ const botonEliminarStyle: React.CSSProperties = {
   fontWeight: "600",
 };
 
+
+const compartidoStyle: React.CSSProperties = {
+  borderRadius: "999px",
+  padding: "4px 9px",
+  fontSize: "12px",
+  fontWeight: "600",
+  background: "#eff8ff",
+  color: "#175cd3",
+};
+
+const perfilCompartidoStyle: React.CSSProperties = {
+  margin: "8px 0 0",
+  color: "#667085",
+  fontSize: "11px",
+  textAlign: "center",
+};
 const errorStyle: React.CSSProperties = {
   background: "#fef3f2",
   border: "1px solid #fecdca",

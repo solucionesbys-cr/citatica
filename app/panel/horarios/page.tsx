@@ -97,6 +97,7 @@ function HorariosContent() {
   async function cargarDatos() {
     setCargando(true);
     setError("");
+    setMensaje("");
 
     if (!professionalId) {
       setError("No se indicó el profesional.");
@@ -118,8 +119,9 @@ function HorariosContent() {
       .from("business_members")
       .select("business_id")
       .eq("user_id", user.id)
+      .eq("is_active", true)
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (miembroError || !miembro) {
       setError(
@@ -130,40 +132,66 @@ function HorariosContent() {
       return;
     }
 
-    setBusinessId(miembro.business_id);
+    const idNegocio = miembro.business_id;
+    setBusinessId(idNegocio);
 
-    const { data: profesional, error: profesionalError } =
-      await supabase
-        .from("professionals")
-        .select("id, name")
-        .eq("id", professionalId)
-        .eq("business_id", miembro.business_id)
-        .single();
+    const {
+      data: relacionProfesional,
+      error: relacionError,
+    } = await supabase
+      .from("professional_businesses")
+      .select(`
+        professional_id,
+        business_id,
+        is_active,
+        professionals (
+          id,
+          name
+        )
+      `)
+      .eq("business_id", idNegocio)
+      .eq("professional_id", professionalId)
+      .eq("is_active", true)
+      .maybeSingle();
 
-    if (profesionalError || !profesional) {
-      setError(
-        profesionalError?.message ||
-          "No se encontró el profesional."
-      );
+    if (relacionError) {
+      setError(relacionError.message);
+      setCargando(false);
+      return;
+    }
+
+    if (!relacionProfesional) {
+      setError("Este profesional no está vinculado a este negocio.");
+      setCargando(false);
+      return;
+    }
+
+    const profesional = Array.isArray(
+      relacionProfesional.professionals
+    )
+      ? relacionProfesional.professionals[0]
+      : relacionProfesional.professionals;
+
+    if (!profesional) {
+      setError("No se encontró el profesional.");
       setCargando(false);
       return;
     }
 
     setNombreProfesional(profesional.name);
 
-    const { data: horariosBD, error: horariosError } =
-      await supabase
-        .from("working_hours")
-        .select(`
-          id,
-          day_of_week,
-          start_time,
-          end_time,
-          is_active
-        `)
-        .eq("business_id", miembro.business_id)
-        .eq("professional_id", professionalId)
-        .order("day_of_week", { ascending: true });
+    const { data: horariosBD, error: horariosError } = await supabase
+      .from("working_hours")
+      .select(`
+        id,
+        day_of_week,
+        start_time,
+        end_time,
+        is_active
+      `)
+      .eq("business_id", idNegocio)
+      .eq("professional_id", professionalId)
+      .order("day_of_week", { ascending: true });
 
     if (horariosError) {
       setError(horariosError.message);
@@ -171,30 +199,27 @@ function HorariosContent() {
       return;
     }
 
-    if (horariosBD && horariosBD.length > 0) {
-      const nuevosHorarios = HORARIO_INICIAL.map((dia) => {
-        const registro = horariosBD.find(
-          (item) => item.day_of_week === dia.day_of_week
-        );
+    const nuevosHorarios = HORARIO_INICIAL.map((dia) => {
+      const registro = (horariosBD || []).find(
+        (item) => item.day_of_week === dia.day_of_week
+      );
 
-        if (!registro) {
-          return {
-            ...dia,
-            activo: false,
-          };
-        }
-
+      if (!registro) {
         return {
           ...dia,
-          activo: registro.is_active,
-          inicio: registro.start_time.slice(0, 5),
-          fin: registro.end_time.slice(0, 5),
+          activo: false,
         };
-      });
+      }
 
-      setHorarios(nuevosHorarios);
-    }
+      return {
+        ...dia,
+        activo: registro.is_active,
+        inicio: registro.start_time.slice(0, 5),
+        fin: registro.end_time.slice(0, 5),
+      };
+    });
 
+    setHorarios(nuevosHorarios);
     setCargando(false);
   }
 
