@@ -1133,22 +1133,25 @@ export default function PanelPage() {
 
             <div style={accesosGridStyle}>
               <Boton
+                icono="📋"
                 texto="Agenda"
-                descripcion="Crear y administrar citas"
+                descripcion="Citas"
                 onClick={() =>
                   router.push("/panel/agenda")
                 }
               />
 
               <Boton
+                icono="📅"
                 texto="Calendario"
-                descripcion="Vista diaria y semanal"
+                descripcion="Día y semana"
                 onClick={() =>
                   router.push("/panel/agenda/calendario")
                 }
               />
 
               <Boton
+                icono="✂️"
                 texto="Servicios"
                 descripcion="Precios y duración"
                 onClick={() =>
@@ -1157,28 +1160,23 @@ export default function PanelPage() {
               />
 
               <Boton
+                icono="👥"
                 texto="Profesionales"
-                descripcion="Administre su equipo"
+                descripcion="Equipo y horarios"
                 onClick={() =>
                   router.push("/panel/profesionales")
                 }
               />
 
               <Boton
-                texto="Horarios y disponibilidad"
-                descripcion="Atención, disponibilidad y bloqueos"
-                onClick={() =>
-                  router.push("/panel/profesionales")
-                }
-              />
-
-              <Boton
-                texto="Mi página de reservas"
-                descripcion="Copiar, abrir o compartir el enlace"
+                icono="🔗"
+                texto="Mi página"
+                descripcion="Reservas online"
                 onClick={abrirPaginaReservas}
               />
 
               <Boton
+                icono="🧑"
                 texto="Clientes"
                 descripcion="Base de clientes"
                 onClick={() =>
@@ -1187,8 +1185,9 @@ export default function PanelPage() {
               />
 
               <Boton
+                icono="⚙️"
                 texto="Configuración"
-                descripcion="Datos del negocio"
+                descripcion="Mi negocio"
                 onClick={() =>
                   router.push("/panel/configuracion")
                 }
@@ -1234,10 +1233,12 @@ function Tarjeta({
 }
 
 function Boton({
+  icono,
   texto,
   descripcion,
   onClick,
 }: {
+  icono: string;
   texto: string;
   descripcion: string;
   onClick: () => void;
@@ -1248,12 +1249,16 @@ function Boton({
       onClick={onClick}
       style={botonAccesoStyle}
     >
-      <strong style={botonAccesoTituloStyle}>
-        {texto}
-      </strong>
+      <span style={botonAccesoIconoStyle}>{icono}</span>
 
-      <span style={botonAccesoDescripcionStyle}>
-        {descripcion}
+      <span style={botonAccesoContenidoStyle}>
+        <strong style={botonAccesoTituloStyle}>
+          {texto}
+        </strong>
+
+        <span style={botonAccesoDescripcionStyle}>
+          {descripcion}
+        </span>
       </span>
     </button>
   );
@@ -1388,7 +1393,7 @@ const mainStyle: React.CSSProperties = {
   minHeight: "100vh",
   background: "#f5f7fb",
   fontFamily: "Arial, sans-serif",
-  padding: "35px 20px 70px",
+  padding: "35px clamp(12px, 4vw, 20px) 70px",
 };
 
 const contenedorStyle: React.CSSProperties = {
@@ -1807,16 +1812,20 @@ const rankingSeparadorStyle: React.CSSProperties = {
 const contenidoGridStyle: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns:
-    "minmax(0, 1.35fr) minmax(330px, 0.65fr)",
+    "repeat(auto-fit, minmax(min(100%, 420px), 1fr))",
   gap: "22px",
   alignItems: "start",
+  width: "100%",
 };
 
 const panelBlancoStyle: React.CSSProperties = {
   background: "#ffffff",
-  padding: "28px",
+  padding: "clamp(18px, 4vw, 28px)",
   borderRadius: "18px",
   boxShadow: "0 6px 20px rgba(0,0,0,0.05)",
+  minWidth: 0,
+  width: "100%",
+  boxSizing: "border-box",
 };
 
 const tituloSeccionFilaStyle: React.CSSProperties = {
@@ -1902,27 +1911,48 @@ const botonVerStyle: React.CSSProperties = {
 
 const accesosGridStyle: React.CSSProperties = {
   display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
   gap: "10px",
+  width: "100%",
 };
 
 const botonAccesoStyle: React.CSSProperties = {
   textAlign: "left",
-  padding: "15px",
+  padding: "13px",
   border: "1px solid #eaecf0",
-  borderRadius: "10px",
+  borderRadius: "12px",
   background: "#ffffff",
   cursor: "pointer",
+  minWidth: 0,
+  minHeight: "92px",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "space-between",
+  gap: "10px",
+  boxSizing: "border-box",
+};
+
+const botonAccesoIconoStyle: React.CSSProperties = {
+  fontSize: "20px",
+  lineHeight: 1,
+};
+
+const botonAccesoContenidoStyle: React.CSSProperties = {
+  display: "block",
+  minWidth: 0,
 };
 
 const botonAccesoTituloStyle: React.CSSProperties = {
   display: "block",
   color: "#101828",
-  fontSize: "15px",
+  fontSize: "14px",
+  lineHeight: 1.25,
 };
 
 const botonAccesoDescripcionStyle: React.CSSProperties = {
   display: "block",
   marginTop: "4px",
   color: "#667085",
-  fontSize: "12px",
+  fontSize: "11px",
+  lineHeight: 1.3,
 };

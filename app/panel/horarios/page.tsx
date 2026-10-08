@@ -85,6 +85,10 @@ function HorariosContent() {
   const [horarios, setHorarios] =
     useState<DiaHorario[]>(HORARIO_INICIAL);
 
+  const [almuerzoActivo, setAlmuerzoActivo] = useState(false);
+  const [almuerzoInicio, setAlmuerzoInicio] = useState("12:00");
+  const [almuerzoFin, setAlmuerzoFin] = useState("13:00");
+
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState("");
@@ -144,6 +148,9 @@ function HorariosContent() {
         professional_id,
         business_id,
         is_active,
+        lunch_enabled,
+        lunch_start,
+        lunch_end,
         professionals (
           id,
           name
@@ -179,6 +186,18 @@ function HorariosContent() {
     }
 
     setNombreProfesional(profesional.name);
+
+    setAlmuerzoActivo(relacionProfesional.lunch_enabled ?? false);
+    setAlmuerzoInicio(
+      relacionProfesional.lunch_start
+        ? relacionProfesional.lunch_start.slice(0, 5)
+        : "12:00"
+    );
+    setAlmuerzoFin(
+      relacionProfesional.lunch_end
+        ? relacionProfesional.lunch_end.slice(0, 5)
+        : "13:00"
+    );
 
     const { data: horariosBD, error: horariosError } = await supabase
       .from("working_hours")
@@ -280,6 +299,20 @@ function HorariosContent() {
       }
     }
 
+    if (almuerzoActivo) {
+      if (!almuerzoInicio || !almuerzoFin) {
+        setError("Debe indicar la hora de inicio y fin del descanso.");
+        return;
+      }
+
+      if (almuerzoFin <= almuerzoInicio) {
+        setError(
+          "La hora final del descanso debe ser posterior a la hora de inicio."
+        );
+        return;
+      }
+    }
+
     setGuardando(true);
 
     const { error: borrarError } = await supabase
@@ -316,7 +349,24 @@ function HorariosContent() {
       }
     }
 
-    setMensaje("Horario guardado correctamente.");
+    const { error: almuerzoError } = await supabase
+      .from("professional_businesses")
+      .update({
+        lunch_enabled: almuerzoActivo,
+        lunch_start: almuerzoActivo ? almuerzoInicio : null,
+        lunch_end: almuerzoActivo ? almuerzoFin : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("business_id", businessId)
+      .eq("professional_id", professionalId);
+
+    if (almuerzoError) {
+      setError(almuerzoError.message);
+      setGuardando(false);
+      return;
+    }
+
+    setMensaje("Horario y descanso guardados correctamente.");
     setGuardando(false);
   }
 
@@ -455,6 +505,68 @@ function HorariosContent() {
             ))}
           </div>
 
+          <div style={descansoStyle}>
+            <div>
+              <h2 style={seccionTituloStyle}>Descanso / almuerzo</h2>
+
+              <p style={textoAyudaStyle}>
+                Configure un descanso fijo que se aplicará automáticamente
+                a los días en que el profesional tenga horario activo.
+              </p>
+            </div>
+
+            <label style={switchContainerStyle}>
+              <input
+                type="checkbox"
+                checked={almuerzoActivo}
+                onChange={(e) => setAlmuerzoActivo(e.target.checked)}
+                style={{
+                  width: "18px",
+                  height: "18px",
+                }}
+              />
+              <strong>Activar descanso diario</strong>
+            </label>
+
+            {almuerzoActivo && (
+              <div style={descansoHorasStyle}>
+                <div>
+                  <label style={horaLabelStyle}>Desde</label>
+                  <input
+                    type="time"
+                    value={almuerzoInicio}
+                    onChange={(e) => setAlmuerzoInicio(e.target.value)}
+                    style={horaInputStyle}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    paddingTop: "28px",
+                    color: "#98a2b3",
+                  }}
+                >
+                  —
+                </div>
+
+                <div>
+                  <label style={horaLabelStyle}>Hasta</label>
+                  <input
+                    type="time"
+                    value={almuerzoFin}
+                    onChange={(e) => setAlmuerzoFin(e.target.value)}
+                    style={horaInputStyle}
+                  />
+                </div>
+              </div>
+            )}
+
+            <p style={descansoNotaStyle}>
+              Este descanso se aplicará únicamente dentro del horario de
+              trabajo configurado para este profesional en este negocio.
+            </p>
+          </div>
+
           <div style={pieStyle}>
             <button
               type="button"
@@ -489,9 +601,9 @@ function HorariosContent() {
           <strong>¿Cómo se utilizará este horario?</strong>
 
           <p style={{ marginBottom: 0 }}>
-            CitaTica combinará este horario con la duración de los
-            servicios y las citas existentes para determinar los
-            espacios disponibles para reservar.
+            CitaTica combinará este horario, el descanso diario,
+            la duración de los servicios, los bloqueos y las citas existentes
+            para determinar los espacios disponibles para reservar.
           </p>
         </section>
       </div>
@@ -625,6 +737,26 @@ const horaInputStyle: React.CSSProperties = {
 const cerradoStyle: React.CSSProperties = {
   color: "#98a2b3",
   fontSize: "14px",
+};
+
+const descansoStyle: React.CSSProperties = {
+  marginTop: "30px",
+  paddingTop: "28px",
+  borderTop: "1px solid #eaecf0",
+};
+
+const descansoHorasStyle: React.CSSProperties = {
+  display: "flex",
+  gap: "14px",
+  alignItems: "flex-start",
+  marginTop: "20px",
+};
+
+const descansoNotaStyle: React.CSSProperties = {
+  color: "#667085",
+  fontSize: "13px",
+  lineHeight: 1.5,
+  margin: "16px 0 0",
 };
 
 const pieStyle: React.CSSProperties = {
