@@ -48,6 +48,14 @@ type Configuracion = {
   maximum_booking_days: number;
   cancellation_policy: string | null;
   booking_confirmation_message: string | null;
+  email_confirmation_enabled: boolean;
+  email_reminder_24h_enabled: boolean;
+  email_reminder_2h_enabled: boolean;
+  email_changes_enabled: boolean;
+  whatsapp_confirmation_enabled: boolean;
+  whatsapp_reminder_24h_enabled: boolean;
+  whatsapp_reminder_2h_enabled: boolean;
+  whatsapp_changes_enabled: boolean;
 };
 
 export default function ConfiguracionPage() {
@@ -103,6 +111,24 @@ export default function ConfiguracionPage() {
   const [cancellationPolicy, setCancellationPolicy] = useState("");
   const [bookingConfirmationMessage, setBookingConfirmationMessage] =
     useState("");
+
+  const [emailConfirmationEnabled, setEmailConfirmationEnabled] =
+    useState(true);
+  const [emailReminder24hEnabled, setEmailReminder24hEnabled] =
+    useState(true);
+  const [emailReminder2hEnabled, setEmailReminder2hEnabled] =
+    useState(true);
+  const [emailChangesEnabled, setEmailChangesEnabled] =
+    useState(true);
+
+  const [whatsappConfirmationEnabled, setWhatsappConfirmationEnabled] =
+    useState(true);
+  const [whatsappReminder24hEnabled, setWhatsappReminder24hEnabled] =
+    useState(true);
+  const [whatsappReminder2hEnabled, setWhatsappReminder2hEnabled] =
+    useState(true);
+  const [whatsappChangesEnabled, setWhatsappChangesEnabled] =
+    useState(true);
 
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
@@ -218,7 +244,15 @@ export default function ConfiguracionPage() {
           minimum_booking_notice_minutes,
           maximum_booking_days,
           cancellation_policy,
-          booking_confirmation_message
+          booking_confirmation_message,
+          email_confirmation_enabled,
+          email_reminder_24h_enabled,
+          email_reminder_2h_enabled,
+          email_changes_enabled,
+          whatsapp_confirmation_enabled,
+          whatsapp_reminder_24h_enabled,
+          whatsapp_reminder_2h_enabled,
+          whatsapp_changes_enabled
         `)
         .eq("business_id", idNegocio)
         .maybeSingle();
@@ -301,6 +335,32 @@ export default function ConfiguracionPage() {
 
     setBookingConfirmationMessage(
       configuracion.booking_confirmation_message || ""
+    );
+
+    setEmailConfirmationEnabled(
+      configuracion.email_confirmation_enabled ?? true
+    );
+    setEmailReminder24hEnabled(
+      configuracion.email_reminder_24h_enabled ?? true
+    );
+    setEmailReminder2hEnabled(
+      configuracion.email_reminder_2h_enabled ?? true
+    );
+    setEmailChangesEnabled(
+      configuracion.email_changes_enabled ?? true
+    );
+
+    setWhatsappConfirmationEnabled(
+      configuracion.whatsapp_confirmation_enabled ?? true
+    );
+    setWhatsappReminder24hEnabled(
+      configuracion.whatsapp_reminder_24h_enabled ?? true
+    );
+    setWhatsappReminder2hEnabled(
+      configuracion.whatsapp_reminder_2h_enabled ?? true
+    );
+    setWhatsappChangesEnabled(
+      configuracion.whatsapp_changes_enabled ?? true
     );
   }
 
@@ -503,6 +563,14 @@ export default function ConfiguracionPage() {
         cancellation_policy: cancellationPolicy.trim() || null,
         booking_confirmation_message:
           bookingConfirmationMessage.trim() || null,
+        email_confirmation_enabled: emailConfirmationEnabled,
+        email_reminder_24h_enabled: emailReminder24hEnabled,
+        email_reminder_2h_enabled: emailReminder2hEnabled,
+        email_changes_enabled: emailChangesEnabled,
+        whatsapp_confirmation_enabled: whatsappConfirmationEnabled,
+        whatsapp_reminder_24h_enabled: whatsappReminder24hEnabled,
+        whatsapp_reminder_2h_enabled: whatsappReminder2hEnabled,
+        whatsapp_changes_enabled: whatsappChangesEnabled,
       });
 
     if (settingsError) {
@@ -957,6 +1025,93 @@ export default function ConfiguracionPage() {
                 checked={showSocialLinks}
                 onChange={setShowSocialLinks}
               />
+            </div>
+          </section>
+
+          <section style={seccionStyle}>
+            <h2 style={seccionTituloStyle}>
+              Recordatorios y notificaciones
+            </h2>
+
+            <p style={textoAyudaStyle}>
+              Defina cómo desea confirmar y recordar las citas a sus clientes.
+              El correo electrónico funciona como canal base. Los mensajes de
+              WhatsApp se enviarán cuando el plan del negocio y la integración
+              de WhatsApp lo permitan.
+            </p>
+
+            <div style={gridDosColumnasStyle}>
+              <div>
+                <h3 style={{ margin: "0 0 14px", color: "#101828", fontSize: "17px" }}>
+                  Correo electrónico
+                </h3>
+
+                <div style={switchGridStyle}>
+                  <SwitchCampo
+                    label="Confirmación de nueva cita"
+                    description="Enviar un correo inmediatamente después de crear la cita."
+                    checked={emailConfirmationEnabled}
+                    onChange={setEmailConfirmationEnabled}
+                  />
+
+                  <SwitchCampo
+                    label="Recordatorio 24 horas antes"
+                    description="Enviar un recordatorio por correo un día antes."
+                    checked={emailReminder24hEnabled}
+                    onChange={setEmailReminder24hEnabled}
+                  />
+
+                  <SwitchCampo
+                    label="Recordatorio 2 horas antes"
+                    description="Enviar un recordatorio por correo dos horas antes."
+                    checked={emailReminder2hEnabled}
+                    onChange={setEmailReminder2hEnabled}
+                  />
+
+                  <SwitchCampo
+                    label="Cambios y cancelaciones"
+                    description="Avisar por correo cuando la cita cambie o sea cancelada."
+                    checked={emailChangesEnabled}
+                    onChange={setEmailChangesEnabled}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <h3 style={{ margin: "0 0 14px", color: "#101828", fontSize: "17px" }}>
+                  WhatsApp
+                </h3>
+
+                <div style={switchGridStyle}>
+                  <SwitchCampo
+                    label="Confirmación de nueva cita"
+                    description="Enviar la confirmación por WhatsApp si el plan lo permite."
+                    checked={whatsappConfirmationEnabled}
+                    onChange={setWhatsappConfirmationEnabled}
+                  />
+
+                  <SwitchCampo
+                    label="Recordatorio 24 horas antes"
+                    description="Enviar un recordatorio por WhatsApp un día antes."
+                    checked={whatsappReminder24hEnabled}
+                    onChange={setWhatsappReminder24hEnabled}
+                  />
+
+                  <SwitchCampo
+                    label="Recordatorio 2 horas antes"
+                    description="Enviar un recordatorio por WhatsApp dos horas antes."
+                    checked={whatsappReminder2hEnabled}
+                    onChange={setWhatsappReminder2hEnabled}
+                  />
+
+                  <SwitchCampo
+                    label="Cambios y cancelaciones"
+                    description="Avisar por WhatsApp cuando la cita cambie o sea cancelada."
+                    checked={whatsappChangesEnabled}
+                    onChange={setWhatsappChangesEnabled}
+                  />
+                </div>
+              </div>
             </div>
           </section>
 
