@@ -14,6 +14,45 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [cargandoGoogle, setCargandoGoogle] = useState(false);
+
+
+  async function iniciarConGoogle() {
+    setMensaje("");
+    setCargandoGoogle(true);
+
+    try {
+      const redirectTo = `${window.location.origin}/auth/callback`;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          queryParams: {
+            prompt: "select_account",
+          },
+        },
+      });
+
+      if (error) {
+        console.error("Error al iniciar con Google:", error);
+
+        setMensaje(
+          "No pudimos iniciar sesión con Google. Inténtalo nuevamente."
+        );
+
+        setCargandoGoogle(false);
+      }
+    } catch (error) {
+      console.error("Error inesperado con Google:", error);
+
+      setMensaje(
+        "Ocurrió un error inesperado al iniciar sesión con Google."
+      );
+
+      setCargandoGoogle(false);
+    }
+  }
 
   async function iniciarSesion(e: React.FormEvent) {
     e.preventDefault();
@@ -135,6 +174,96 @@ export default function LoginPage() {
           </p>
         </div>
 
+
+        <button
+          type="button"
+          onClick={iniciarConGoogle}
+          disabled={cargando || cargandoGoogle}
+          style={{
+            width: "100%",
+            minHeight: "52px",
+            padding: "13px 16px",
+            border: "1px solid #D0D5DD",
+            borderRadius: "12px",
+            background:
+              cargando || cargandoGoogle
+                ? "#F2F4F7"
+                : "#FFFFFF",
+            color: "#344054",
+            fontSize: "15px",
+            fontWeight: "700",
+            cursor:
+              cargando || cargandoGoogle
+                ? "not-allowed"
+                : "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "12px",
+            boxShadow: "0 1px 2px rgba(16,24,40,0.05)",
+          }}
+        >
+          <span
+            aria-hidden="true"
+            style={{
+              width: "24px",
+              height: "24px",
+              borderRadius: "50%",
+              border: "1px solid #EAECF0",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "#FFFFFF",
+              color: "#4285F4",
+              fontSize: "16px",
+              fontWeight: "800",
+              fontFamily: "Arial, sans-serif",
+              flexShrink: 0,
+            }}
+          >
+            G
+          </span>
+
+          {cargandoGoogle
+            ? "Conectando con Google..."
+            : "Continuar con Google"}
+        </button>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "14px",
+            margin: "24px 0 4px",
+          }}
+        >
+          <div
+            style={{
+              height: "1px",
+              background: "#EAECF0",
+              flex: 1,
+            }}
+          />
+
+          <span
+            style={{
+              color: "#98A2B3",
+              fontSize: "13px",
+              fontWeight: "600",
+            }}
+          >
+            o continúa con correo
+          </span>
+
+          <div
+            style={{
+              height: "1px",
+              background: "#EAECF0",
+              flex: 1,
+            }}
+          />
+        </div>
+
         <form onSubmit={iniciarSesion}>
           <label style={labelStyle}>
             Correo electrónico
@@ -149,7 +278,7 @@ export default function LoginPage() {
             }
             placeholder="correo@ejemplo.com"
             autoComplete="email"
-            disabled={cargando}
+            disabled={cargando || cargandoGoogle}
             style={inputStyle}
           />
 
@@ -195,13 +324,13 @@ export default function LoginPage() {
             }
             placeholder="Ingresa tu contraseña"
             autoComplete="current-password"
-            disabled={cargando}
+            disabled={cargando || cargandoGoogle}
             style={inputStyle}
           />
 
           <button
             type="submit"
-            disabled={cargando}
+            disabled={cargando || cargandoGoogle}
             style={{
               width: "100%",
               padding: "16px",
