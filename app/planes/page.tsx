@@ -445,7 +445,7 @@ export default async function PlanesPage() {
                   />
                 </div>
 
-                <Link
+                <a
                   href={`/onboarding?plan=${encodeURIComponent(
                     plan.code
                   )}`}
@@ -468,7 +468,7 @@ export default async function PlanesPage() {
                     : plan.code === "EMPRENDE"
                     ? "Probar 15 días"
                     : "Elegir este plan"}
-                </Link>
+                </a>
               </article>
             );
           })}
