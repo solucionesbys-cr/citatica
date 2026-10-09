@@ -798,6 +798,84 @@ export default function PanelPage() {
           </section>
         )}
 
+        <section
+          style={{
+            ...panelBlancoStyle,
+            marginBottom: "28px",
+          }}
+        >
+          <h2 style={tituloSeccionStyle}>
+            Prepare su negocio para recibir citas
+          </h2>
+
+          <p style={textoSecundarioStyle}>
+            Le recomendamos seguir este orden para dejar CitaTica listo.
+          </p>
+
+          <div style={accesosGridStyle}>
+            <Boton
+              icono="⚙️"
+              texto="1. Configure su negocio"
+              descripcion="Datos, logo y contacto"
+              onClick={() =>
+                router.push("/panel/configuracion")
+              }
+            />
+
+            <Boton
+              icono="✂️"
+              texto="2. Agregue sus servicios"
+              descripcion="Precios y duración"
+              onClick={() =>
+                router.push("/panel/servicios")
+              }
+            />
+
+            <Boton
+              icono="👥"
+              texto="3. Profesionales y horarios"
+              descripcion="Equipo y disponibilidad"
+              onClick={() =>
+                router.push("/panel/profesionales")
+              }
+            />
+
+            <Boton
+              icono="🔗"
+              texto="4. Comparta su página"
+              descripcion="Reservas online"
+              onClick={abrirPaginaReservas}
+            />
+
+            <Boton
+              icono="📋"
+              texto="Agenda"
+              descripcion="Gestionar citas"
+              onClick={() =>
+                router.push("/panel/agenda")
+              }
+            />
+
+            <Boton
+              icono="📅"
+              texto="Calendario"
+              descripcion="Día y semana"
+              onClick={() =>
+                router.push("/panel/agenda/calendario")
+              }
+            />
+
+            <Boton
+              icono="🧑"
+              texto="Clientes"
+              descripcion="Base de clientes"
+              onClick={() =>
+                router.push("/panel/clientes")
+              }
+            />
+          </div>
+        </section>
+
         <section style={tarjetasGridStyle}>
           <Tarjeta
             titulo="Citas de hoy"
@@ -1122,78 +1200,6 @@ export default function PanelPage() {
             )}
           </section>
 
-          <section style={panelBlancoStyle}>
-            <h2 style={tituloSeccionStyle}>
-              Accesos rápidos
-            </h2>
-
-            <p style={textoSecundarioStyle}>
-              Administre las principales áreas de CitaTica.
-            </p>
-
-            <div style={accesosGridStyle}>
-              <Boton
-                icono="📋"
-                texto="Agenda"
-                descripcion="Citas"
-                onClick={() =>
-                  router.push("/panel/agenda")
-                }
-              />
-
-              <Boton
-                icono="📅"
-                texto="Calendario"
-                descripcion="Día y semana"
-                onClick={() =>
-                  router.push("/panel/agenda/calendario")
-                }
-              />
-
-              <Boton
-                icono="✂️"
-                texto="Servicios"
-                descripcion="Precios y duración"
-                onClick={() =>
-                  router.push("/panel/servicios")
-                }
-              />
-
-              <Boton
-                icono="👥"
-                texto="Profesionales"
-                descripcion="Equipo y horarios"
-                onClick={() =>
-                  router.push("/panel/profesionales")
-                }
-              />
-
-              <Boton
-                icono="🔗"
-                texto="Mi página"
-                descripcion="Reservas online"
-                onClick={abrirPaginaReservas}
-              />
-
-              <Boton
-                icono="🧑"
-                texto="Clientes"
-                descripcion="Base de clientes"
-                onClick={() =>
-                  router.push("/panel/clientes")
-                }
-              />
-
-              <Boton
-                icono="⚙️"
-                texto="Configuración"
-                descripcion="Mi negocio"
-                onClick={() =>
-                  router.push("/panel/configuracion")
-                }
-              />
-            </div>
-          </section>
         </div>
       </div>
     </main>
