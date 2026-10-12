@@ -92,7 +92,7 @@ export default function TerminosPage() {
         </h1>
 
         <p style={actualizacionStyle}>
-          Última actualización: 28 de septiembre de 2026
+          Última actualización: Octubre 2026
         </p>
 
         <div style={identificacionStyle}>
@@ -107,7 +107,6 @@ export default function TerminosPage() {
             Servicios de Tecnologías de Información.
           </p>
         </div>
-
         <Seccion titulo="1. Objeto">
           <p>
             Estos Términos y Condiciones regulan el acceso, registro,
@@ -124,7 +123,6 @@ export default function TerminosPage() {
             leído, comprendido y aceptado estos Términos y Condiciones.
           </p>
         </Seccion>
-
         <Seccion titulo="2. Identificación del proveedor">
           <p>
             El servicio CitaTica es operado por Bryan Bermúdez
@@ -143,7 +141,6 @@ export default function TerminosPage() {
             plataforma CitaTica.
           </p>
         </Seccion>
-
         <Seccion titulo="3. Usuarios de CitaTica">
           <p>
             CitaTica está dirigida principalmente a negocios,
@@ -157,7 +154,6 @@ export default function TerminosPage() {
             CitaTica en su nombre.
           </p>
         </Seccion>
-
         <Seccion titulo="4. Cuenta y seguridad">
           <p>
             Cada usuario es responsable de mantener la confidencialidad
@@ -177,7 +173,6 @@ export default function TerminosPage() {
             razonables de seguridad.
           </p>
         </Seccion>
-
         <Seccion titulo="5. Planes y funcionalidades">
           <p>
             CitaTica puede ofrecer diferentes planes con precios,
@@ -194,12 +189,11 @@ export default function TerminosPage() {
 
           <p>
             CitaTica podrá modificar en el futuro sus planes, precios o
-            características. Cuando un cambio afecte de forma
-            relevante una suscripción activa, se procurará comunicarlo
+            características. Cuando un cambio afecte de forma relevante
+            una suscripción activa, se procurará comunicarlo
             previamente al usuario.
           </p>
         </Seccion>
-
         <Seccion titulo="6. Prueba Premium de 15 días">
           <p>
             Los negocios nuevos podrán recibir una prueba gratuita de
@@ -225,13 +219,13 @@ export default function TerminosPage() {
             sujeto a los límites correspondientes a dicho plan.
           </p>
         </Seccion>
-
         <Seccion titulo="7. Pagos, renovaciones y cambios de plan">
           <p>
             Cuando CitaTica habilite planes de pago, el precio,
             periodicidad, impuestos aplicables, métodos de pago y
             condiciones de renovación serán informados antes de que el
-            usuario confirme la contratación.
+            usuario confirme la contratación; estos se realizan a
+            través de Cargos Recurrentes.
           </p>
 
           <p>
@@ -244,24 +238,7 @@ export default function TerminosPage() {
             funcionalidades disponibles para el negocio.
           </p>
         </Seccion>
-
-        <Seccion titulo="8. Cancelaciones, retracto y devoluciones">
-          <p>
-            Las reglas aplicables a cancelaciones, derecho de retracto,
-            cobros incorrectos, reembolsos y devoluciones se encuentran
-            detalladas en nuestra{" "}
-            <Link
-              href="/cancelaciones-y-devoluciones"
-              style={linkStyle}
-            >
-              Política de Cancelaciones y Devoluciones
-            </Link>
-            , la cual forma parte integral de estos Términos y
-            Condiciones.
-          </p>
-        </Seccion>
-
-        <Seccion titulo="9. Mensajería y WhatsApp">
+        <Seccion titulo="8. Mensajería y WhatsApp">
           <p>
             Algunos planes pueden incluir confirmaciones,
             recordatorios y otras comunicaciones relacionadas con citas
@@ -282,31 +259,7 @@ export default function TerminosPage() {
           </p>
         </Seccion>
 
-        <Seccion titulo="10. Información de clientes">
-          <p>
-            Los negocios pueden registrar información necesaria para
-            administrar sus citas, como nombres, teléfonos, WhatsApp,
-            direcciones de correo electrónico, servicios solicitados y
-            datos relacionados con las reservas.
-          </p>
-
-          <p>
-            Cada negocio es responsable de utilizar la información de
-            sus clientes de manera legítima, proporcional y relacionada
-            con la prestación de sus servicios.
-          </p>
-
-          <p>
-            El tratamiento de datos personales realizado a través de
-            CitaTica se regula además por nuestra{" "}
-            <Link href="/privacidad" style={linkStyle}>
-              Política de Privacidad
-            </Link>
-            .
-          </p>
-        </Seccion>
-
-        <Seccion titulo="11. Usos prohibidos">
+        <Seccion titulo="9. Usos prohibidos">
           <p>No está permitido utilizar CitaTica para:</p>
 
           <ul style={listaStyle}>
@@ -326,7 +279,7 @@ export default function TerminosPage() {
           </ul>
         </Seccion>
 
-        <Seccion titulo="12. Disponibilidad del servicio">
+        <Seccion titulo="10. Disponibilidad del servicio">
           <p>
             CitaTica procurará mantener la plataforma disponible y
             operativa. Sin embargo, pueden producirse interrupciones
@@ -341,23 +294,28 @@ export default function TerminosPage() {
             relevantes.
           </p>
         </Seccion>
-
-        <Seccion titulo="13. Servicios de terceros">
+        <Seccion titulo="11. Servicios de terceros">
           <p>
             CitaTica puede utilizar servicios tecnológicos de terceros
             para funciones como alojamiento, autenticación,
             almacenamiento, correo electrónico, mensajería,
             procesamiento de pagos u otras funcionalidades.
+            <strong>
+              {" "}No se almacenan datos sensibles de las tarjetas de
+              crédito o débito, tales como la numeración completa del
+              plástico, la fecha de vencimiento y el código de seguridad
+              (CVV), garantizando así el tratamiento seguro de la
+              información de los usuarios.
+            </strong>
           </p>
 
           <p>
-            Algunas funciones pueden estar sujetas adicionalmente a
-            los términos, políticas y disponibilidad de dichos
-            proveedores.
+            Algunas funciones pueden estar sujetas adicionalmente a los
+            términos, políticas y disponibilidad de dichos proveedores.
           </p>
         </Seccion>
 
-        <Seccion titulo="14. Cancelación y cierre de cuenta">
+        <Seccion titulo="12. Cancelación y cierre de cuenta">
           <p>
             El usuario podrá solicitar la cancelación de su suscripción
             o el cierre de su cuenta conforme a los mecanismos
@@ -377,7 +335,7 @@ export default function TerminosPage() {
           </p>
         </Seccion>
 
-        <Seccion titulo="15. Suspensión">
+        <Seccion titulo="13. Suspensión">
           <p>
             CitaTica podrá suspender temporalmente una cuenta cuando
             exista uso abusivo, fraude, riesgo de seguridad,
@@ -386,7 +344,7 @@ export default function TerminosPage() {
           </p>
         </Seccion>
 
-        <Seccion titulo="16. Responsabilidad del negocio">
+        <Seccion titulo="14. Responsabilidad del negocio">
           <p>
             CitaTica proporciona herramientas tecnológicas para la
             gestión de citas y negocios, pero no participa en la
@@ -402,7 +360,7 @@ export default function TerminosPage() {
           </p>
         </Seccion>
 
-        <Seccion titulo="17. Propiedad intelectual">
+        <Seccion titulo="15. Propiedad intelectual">
           <p>
             El nombre CitaTica, su identidad gráfica, software, diseño,
             funcionalidades, documentación y demás elementos propios de
@@ -416,24 +374,7 @@ export default function TerminosPage() {
           </p>
         </Seccion>
 
-        <Seccion titulo="18. Protección de datos personales">
-          <p>
-            CitaTica tratará los datos personales conforme a su{" "}
-            <Link href="/privacidad" style={linkStyle}>
-              Política de Privacidad
-            </Link>{" "}
-            y a la legislación costarricense aplicable.
-          </p>
-
-          <p>
-            Los usuarios deberán utilizar los datos personales a los
-            que tengan acceso únicamente para fines legítimos
-            relacionados con la operación de su negocio y la gestión de
-            citas.
-          </p>
-        </Seccion>
-
-        <Seccion titulo="19. Modificaciones de estos términos">
+        <Seccion titulo="16. Modificaciones de estos términos">
           <p>
             Estos términos pueden ser actualizados para reflejar
             cambios en CitaTica, nuevas funcionalidades, cambios
@@ -448,21 +389,12 @@ export default function TerminosPage() {
           </p>
         </Seccion>
 
-        <Seccion titulo="20. Legislación aplicable">
+        <Seccion titulo="17. Legislación aplicable">
           <p>
             Estos términos se interpretarán conforme al ordenamiento
             jurídico de la República de Costa Rica, sin perjuicio de
             los derechos reconocidos por la normativa de protección al
             consumidor y de protección de datos personales.
-          </p>
-        </Seccion>
-
-        <Seccion titulo="21. Contacto">
-          <p>
-            Para consultas sobre estos términos, privacidad,
-            cancelaciones, cuenta o servicio al cliente, el usuario
-            podrá utilizar los medios oficiales de contacto publicados
-            por CitaTica.
           </p>
         </Seccion>
 
@@ -495,17 +427,6 @@ export default function TerminosPage() {
               Cancelaciones y Devoluciones
             </Link>
           </div>
-        </div>
-
-        <div style={avisoStyle}>
-          <strong style={{ color: "#042A6B" }}>
-            Nota importante:
-          </strong>{" "}
-          este documento constituye la base contractual de CitaTica.
-          Antes de iniciar el cobro de suscripciones a terceros, es
-          recomendable realizar una revisión jurídica profesional de la
-          versión final, especialmente de las condiciones de pago,
-          facturación, retracto y protección de datos.
         </div>
       </article>
     </main>

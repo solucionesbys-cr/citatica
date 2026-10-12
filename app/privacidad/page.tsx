@@ -35,8 +35,36 @@ export default function PrivacidadPage() {
         <h1 style={titleStyle}>Política de Privacidad</h1>
 
         <p style={updatedStyle}>
-          Última actualización: 28 de septiembre de 2026
+          Última actualización: octubre 2026
         </p>
+
+        <Section title="Información de clientes y protección de datos personales">
+          <p>
+            CitaTica tratará los datos personales conforme a esta
+            Política de Privacidad y a la legislación costarricense
+            aplicable.
+          </p>
+
+          <p>
+            Los usuarios deberán utilizar los datos personales a los
+            que tengan acceso únicamente para fines legítimos
+            relacionados con la operación de su negocio y la gestión de
+            citas.
+          </p>
+
+          <p>
+            Los negocios pueden registrar información necesaria para
+            administrar sus citas, como nombres, teléfonos, WhatsApp,
+            direcciones de correo electrónico, servicios solicitados y
+            datos relacionados con las reservas.
+          </p>
+
+          <p>
+            Cada negocio es responsable de utilizar la información de
+            sus clientes de manera legítima, proporcional y relacionada
+            con la prestación de sus servicios.
+          </p>
+        </Section>
 
         <Section title="1. Responsable del tratamiento">
           <p>
@@ -52,19 +80,25 @@ export default function PrivacidadPage() {
             facturación, seguridad y funcionamiento general del servicio.
           </p>
         </Section>
-
         <Section title="2. Alcance de esta política">
           <p>
-            Esta política describe cómo CitaTica recopila, utiliza, almacena y
-            protege la información personal de las personas que crean una
-            cuenta, administran un negocio o utilizan las herramientas de la
-            plataforma.
+            Esta política describe cómo CitaTica recopila, utiliza y
+            protege la información personal de las personas que crean
+            una cuenta, administran un negocio o utilizan las
+            herramientas de la plataforma.
           </p>
 
           <p>
-            También explica el tratamiento de información que los negocios
-            registran sobre sus propios clientes para gestionar citas y
-            servicios.
+            También explica el tratamiento de información que los
+            negocios registran sobre sus propios clientes para gestionar
+            citas y servicios.
+            <strong>
+              {" "}No se almacenan datos sensibles de las tarjetas de
+              crédito o débito, tales como la numeración completa del
+              plástico, la fecha de vencimiento y el código de seguridad
+              (CVV), garantizando así el tratamiento seguro de la
+              información de los usuarios.
+            </strong>
           </p>
         </Section>
 
@@ -167,6 +201,11 @@ export default function PrivacidadPage() {
           </p>
         </Section>
 
+        <p style={{ marginTop: "34px" }}>
+          El comercio no almacena datos sensibles de las tarjetas de
+          crédito o débito utilizadas.
+        </p>
+
         <Section title="9. Seguridad">
           <p>
             CitaTica adopta medidas técnicas y organizativas razonables para
@@ -248,12 +287,6 @@ export default function PrivacidadPage() {
               Cancelaciones y Devoluciones
             </Link>
           </div>
-        </div>
-
-        <div style={legalNoticeStyle}>
-          Esta es una versión inicial preparada para el lanzamiento de CitaTica.
-          Conviene realizar una revisión jurídica profesional antes de iniciar
-          cobros comerciales a usuarios finales.
         </div>
       </article>
     </main>

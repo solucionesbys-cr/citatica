@@ -35,7 +35,7 @@ export default function CancelacionesYDevolucionesPage() {
         <h1 style={titleStyle}>Cancelaciones y Devoluciones</h1>
 
         <p style={updatedStyle}>
-          Última actualización: 28 de septiembre de 2026
+          Última actualización: octubre 2026
         </p>
 
         <Section title="1. Alcance">
@@ -159,17 +159,16 @@ export default function CancelacionesYDevolucionesPage() {
             <li>descripción del problema.</li>
           </ul>
         </Section>
-
         <Section title="8. Método de devolución">
           <p>
-            Cuando corresponda una devolución, se procurará realizarla por el
-            mismo medio utilizado para el pago original, cuando sea técnicamente
-            posible y permitido por el proveedor de pagos.
+            Cuando corresponda una devolución, se realizará al mismo
+            medio utilizado para el pago original, es decir, a la misma
+            tarjeta con la que se realizó la compra.
           </p>
 
           <p>
-            Los tiempos de acreditación pueden depender de bancos, emisores de
-            tarjetas, procesadores de pago u otros terceros.
+            Los tiempos de acreditación pueden depender de bancos,
+            emisores de tarjetas, procesadores de pago u otros terceros.
           </p>
         </Section>
 
@@ -231,12 +230,6 @@ export default function CancelacionesYDevolucionesPage() {
               Política de Privacidad
             </Link>
           </div>
-        </div>
-
-        <div style={legalNoticeStyle}>
-          Esta política es una versión inicial preparada para CitaTica. Antes de
-          iniciar cobros comerciales, conviene realizar una revisión jurídica y
-          ajustarla al proveedor de pagos que finalmente utilice la plataforma.
         </div>
       </article>
     </main>
