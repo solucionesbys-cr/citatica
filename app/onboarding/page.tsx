@@ -43,10 +43,13 @@ function OnboardingContent() {
   const supabase = useMemo(() => createClient(), []);
 
   const codigoPlan = searchParams.get("plan") || "";
-  const billingCycle =
+  const [billingCycle, setBillingCycle] = useState<
+    "MONTHLY" | "ANNUAL"
+  >(
     searchParams.get("billing") === "ANNUAL"
       ? "ANNUAL"
-      : "MONTHLY";
+      : "MONTHLY"
+  );
 
   const [categorias, setCategorias] = useState<Categoria[]>(
     []
@@ -426,6 +429,68 @@ function OnboardingContent() {
                   ? "/año"
                   : "/mes"}
               </span>
+
+              {(codigoPlan === "NEGOCIO" ||
+                codigoPlan === "PRO") ? (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "8px",
+                    marginTop: "12px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setBillingCycle("MONTHLY")}
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: "10px",
+                      border:
+                        billingCycle === "MONTHLY"
+                          ? "2px solid #0066FF"
+                          : "1px solid #D0D5DD",
+                      background:
+                        billingCycle === "MONTHLY"
+                          ? "#EEF5FF"
+                          : "#FFFFFF",
+                      color: "#042A6B",
+                      fontWeight: "700",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Mensual · ₡
+                    {Number(plan.monthly_price).toLocaleString(
+                      "es-CR"
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setBillingCycle("ANNUAL")}
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: "10px",
+                      border:
+                        billingCycle === "ANNUAL"
+                          ? "2px solid #0066FF"
+                          : "1px solid #D0D5DD",
+                      background:
+                        billingCycle === "ANNUAL"
+                          ? "#EEF5FF"
+                          : "#FFFFFF",
+                      color: "#042A6B",
+                      fontWeight: "700",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Anual · ₡
+                    {Number(plan.annual_price).toLocaleString(
+                      "es-CR"
+                    )}
+                  </button>
+                </div>
+              ) : null}
             </div>
 
             <Link
