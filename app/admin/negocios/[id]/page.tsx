@@ -38,24 +38,6 @@ type Resumen = {
   pagos: number;
 };
 
-
-type PreviewEliminacion = {
-  businessId: string;
-  businessName: string;
-  slug: string;
-  createdAt: string | null;
-  counts: {
-    miembros: number;
-    clientes: number;
-    servicios: number;
-    profesionales: number;
-    citas: number;
-    pagos: number;
-    suscripciones: number;
-    configuraciones: number;
-  };
-};
-
 const resumenInicial: Resumen = {
   clientes: 0,
   servicios: 0,
@@ -98,12 +80,6 @@ export default function AdminNegocioDetallePage() {
     useState(false);
   const [cambiandoEstadoNegocio, setCambiandoEstadoNegocio] =
     useState(false);
-  const [previewEliminacion, setPreviewEliminacion] =
-    useState<PreviewEliminacion | null>(null);
-  const [confirmacionNombre, setConfirmacionNombre] = useState("");
-  const [preparandoEliminacion, setPreparandoEliminacion] =
-    useState(false);
-  const [eliminandoNegocio, setEliminandoNegocio] = useState(false);
 
   useEffect(() => {
     if (!businessId) return;
@@ -115,130 +91,87 @@ export default function AdminNegocioDetallePage() {
     setError("");
 
     const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
 
-    if (userError || !user) {
+    if (sessionError || !session?.access_token) {
       router.replace("/login");
       return;
     }
 
-    const { data: admin, error: adminError } = await supabase
-      .from("admin_users")
-      .select("role, is_active")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .maybeSingle();
+    try {
+      const respuesta = await fetch(
+        `/api/admin/negocios/detalle?businessId=${encodeURIComponent(
+          businessId
+        )}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          cache: "no-store",
+        }
+      );
 
-    if (adminError || !admin) {
-      router.replace("/panel");
-      return;
+      const resultado = await respuesta.json();
+
+      if (respuesta.status === 401) {
+        router.replace("/login");
+        return;
+      }
+
+      if (respuesta.status === 403) {
+        router.replace("/panel");
+        return;
+      }
+
+      if (!respuesta.ok) {
+        setError(
+          resultado?.error ||
+            "No se pudo cargar la información del negocio."
+        );
+        return;
+      }
+
+      setAutorizado(true);
+
+      const negocioData = (resultado.negocio as Negocio | null) || null;
+      const configuracionData =
+        (resultado.configuracion as ConfiguracionNegocio | null) || null;
+      const suscripcionData =
+        (resultado.suscripcion as Suscripcion | null) || null;
+      const resumenData =
+        (resultado.resumen as Resumen | null) || resumenInicial;
+
+      setNegocio(negocioData);
+      setConfiguracion(configuracionData);
+      setSuscripcion(suscripcionData);
+      setResumen(resumenData);
+
+      if (suscripcionData?.plan_code) {
+        setPlanSeleccionado(suscripcionData.plan_code);
+      }
+
+      if (suscripcionData?.status) {
+        setEstadoSeleccionado(suscripcionData.status);
+      }
+
+      if (suscripcionData?.billing_cycle) {
+        setCicloSeleccionado(suscripcionData.billing_cycle);
+      }
+    } catch (error) {
+      console.error("Error cargando detalle administrativo:", error);
+      setError(
+        "Ocurrió un error al cargar la información del negocio."
+      );
+    } finally {
+      setCargando(false);
     }
-
-    setAutorizado(true);
-    await cargarNegocio();
-    setCargando(false);
   }
 
   async function cargarNegocio() {
-    const [
-      negocioResultado,
-      configuracionResultado,
-      suscripcionResultado,
-      clientesResultado,
-      serviciosResultado,
-      profesionalesResultado,
-      citasResultado,
-      pagosResultado,
-    ] = await Promise.all([
-      supabase
-        .from("businesses")
-        .select("id, business_name, slug, timezone, created_at")
-        .eq("id", businessId)
-        .maybeSingle(),
-
-      supabase
-        .from("business_settings")
-        .select("*")
-        .eq("business_id", businessId)
-        .maybeSingle(),
-
-      supabase
-        .from("business_subscriptions")
-        .select("*")
-        .eq("business_id", businessId)
-        .maybeSingle(),
-
-      supabase
-        .from("clients")
-        .select("*", { count: "exact", head: true })
-        .eq("business_id", businessId),
-
-      supabase
-        .from("services")
-        .select("*", { count: "exact", head: true })
-        .eq("business_id", businessId),
-
-      supabase
-        .from("professionals")
-        .select("*", { count: "exact", head: true })
-        .eq("business_id", businessId),
-
-      supabase
-        .from("appointments")
-        .select("*", { count: "exact", head: true })
-        .eq("business_id", businessId),
-
-      supabase
-        .from("payments")
-        .select("*", { count: "exact", head: true })
-        .eq("business_id", businessId),
-    ]);
-
-    if (negocioResultado.error) {
-      setError(
-        `No se pudo cargar el negocio: ${negocioResultado.error.message}`
-      );
-      return;
-    }
-
-    if (!negocioResultado.data) {
-      setError("No se encontró el negocio solicitado.");
-      return;
-    }
-
-    setNegocio(negocioResultado.data as Negocio);
-
-    setConfiguracion(
-      (configuracionResultado.data as ConfiguracionNegocio | null) ||
-        null
-    );
-
-    const suscripcionData =
-      (suscripcionResultado.data as Suscripcion | null) || null;
-
-    setSuscripcion(suscripcionData);
-
-    if (suscripcionData?.plan_code) {
-      setPlanSeleccionado(suscripcionData.plan_code);
-    }
-
-    if (suscripcionData?.status) {
-      setEstadoSeleccionado(suscripcionData.status);
-    }
-
-    if (suscripcionData?.billing_cycle) {
-      setCicloSeleccionado(suscripcionData.billing_cycle);
-    }
-
-    setResumen({
-      clientes: clientesResultado.count || 0,
-      servicios: serviciosResultado.count || 0,
-      profesionales: profesionalesResultado.count || 0,
-      citas: citasResultado.count || 0,
-      pagos: pagosResultado.count || 0,
-    });
+    await verificarAccesoYCargar();
   }
 
   async function obtenerAccessToken() {
@@ -468,121 +401,6 @@ export default function AdminNegocioDetallePage() {
       );
     } finally {
       setCambiandoEstadoNegocio(false);
-    }
-  }
-
-  async function prepararEliminacion() {
-    if (!negocio || preparandoEliminacion) return;
-
-    setPreparandoEliminacion(true);
-    setMensajeAccion("");
-    setConfirmacionNombre("");
-
-    try {
-      const accessToken = await obtenerAccessToken();
-
-      if (!accessToken) {
-        setMensajeAccion(
-          "No encontramos una sesión válida. Inicie sesión nuevamente."
-        );
-        return;
-      }
-
-      const respuesta = await fetch(
-        "/api/admin/negocios/eliminar",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
-            businessId: negocio.id,
-            action: "PREVIEW",
-          }),
-        }
-      );
-
-      const resultado = await respuesta.json();
-
-      if (!respuesta.ok) {
-        setMensajeAccion(
-          resultado?.error || "No se pudo preparar la eliminación."
-        );
-        return;
-      }
-
-      setPreviewEliminacion(resultado.preview as PreviewEliminacion);
-    } catch (error) {
-      console.error("Error preparando eliminación:", error);
-      setMensajeAccion(
-        "Ocurrió un error al preparar la eliminación."
-      );
-    } finally {
-      setPreparandoEliminacion(false);
-    }
-  }
-
-  async function eliminarNegocio() {
-    if (!negocio || !previewEliminacion || eliminandoNegocio) return;
-
-    if (confirmacionNombre !== negocio.business_name) {
-      setMensajeAccion(
-        "Escriba exactamente el nombre del negocio para continuar."
-      );
-      return;
-    }
-
-    const confirmado = window.confirm(
-      `ÚLTIMA CONFIRMACIÓN\n\nVa a eliminar permanentemente "${negocio.business_name}".\n\nEsta acción no se puede deshacer.\n\n¿Desea continuar?`
-    );
-
-    if (!confirmado) return;
-
-    setEliminandoNegocio(true);
-    setMensajeAccion("");
-
-    try {
-      const accessToken = await obtenerAccessToken();
-
-      if (!accessToken) {
-        setMensajeAccion(
-          "No encontramos una sesión válida. Inicie sesión nuevamente."
-        );
-        return;
-      }
-
-      const respuesta = await fetch(
-        "/api/admin/negocios/eliminar",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
-            businessId: negocio.id,
-            action: "DELETE",
-            confirmName: confirmacionNombre,
-          }),
-        }
-      );
-
-      const resultado = await respuesta.json();
-
-      if (!respuesta.ok) {
-        setMensajeAccion(
-          resultado?.error || "No se pudo eliminar el negocio."
-        );
-        return;
-      }
-
-      router.replace("/admin/negocios");
-    } catch (error) {
-      console.error("Error eliminando negocio:", error);
-      setMensajeAccion("Ocurrió un error al eliminar el negocio.");
-    } finally {
-      setEliminandoNegocio(false);
     }
   }
 
@@ -926,101 +744,6 @@ export default function AdminNegocioDetallePage() {
             </div>
           ) : null}
         </section>
-
-        <section style={zonaPeligroStyle}>
-          <p style={peligroEtiquetaStyle}>ZONA DE PELIGRO</p>
-
-          <h2 style={peligroTituloStyle}>
-            Eliminar negocio de prueba
-          </h2>
-
-          <p style={peligroTextoStyle}>
-            Utilice esta opción únicamente para negocios de prueba. La
-            eliminación es permanente. La cuenta del usuario no se elimina
-            automáticamente.
-          </p>
-
-          {!previewEliminacion ? (
-            <button
-              type="button"
-              onClick={prepararEliminacion}
-              disabled={preparandoEliminacion}
-              style={{
-                ...prepararEliminarStyle,
-                opacity: preparandoEliminacion ? 0.65 : 1,
-              }}
-            >
-              {preparandoEliminacion
-                ? "Revisando datos..."
-                : "Preparar eliminación"}
-            </button>
-          ) : (
-            <div style={confirmacionEliminarStyle}>
-              <div style={conteosEliminarGridStyle}>
-                <ConteoEliminar titulo="Miembros" valor={previewEliminacion.counts.miembros} />
-                <ConteoEliminar titulo="Clientes" valor={previewEliminacion.counts.clientes} />
-                <ConteoEliminar titulo="Servicios" valor={previewEliminacion.counts.servicios} />
-                <ConteoEliminar titulo="Profesionales" valor={previewEliminacion.counts.profesionales} />
-                <ConteoEliminar titulo="Citas" valor={previewEliminacion.counts.citas} />
-                <ConteoEliminar titulo="Pagos" valor={previewEliminacion.counts.pagos} />
-              </div>
-
-              <p style={advertenciaEliminarStyle}>
-                Para confirmar, escriba exactamente:
-                <strong> {negocio.business_name}</strong>
-              </p>
-
-              <input
-                type="text"
-                value={confirmacionNombre}
-                onChange={(event) =>
-                  setConfirmacionNombre(event.target.value)
-                }
-                placeholder={negocio.business_name}
-                style={confirmacionInputStyle}
-              />
-
-              <div style={botonesEliminarStyle}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPreviewEliminacion(null);
-                    setConfirmacionNombre("");
-                  }}
-                  style={cancelarEliminarStyle}
-                >
-                  Cancelar
-                </button>
-
-                <button
-                  type="button"
-                  onClick={eliminarNegocio}
-                  disabled={
-                    eliminandoNegocio ||
-                    confirmacionNombre !== negocio.business_name
-                  }
-                  style={{
-                    ...eliminarDefinitivoStyle,
-                    opacity:
-                      eliminandoNegocio ||
-                      confirmacionNombre !== negocio.business_name
-                        ? 0.5
-                        : 1,
-                    cursor:
-                      eliminandoNegocio ||
-                      confirmacionNombre !== negocio.business_name
-                        ? "not-allowed"
-                        : "pointer",
-                  }}
-                >
-                  {eliminandoNegocio
-                    ? "Eliminando..."
-                    : "Eliminar definitivamente"}
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
       </div>
     </main>
   );
@@ -1052,21 +775,6 @@ function Dato({
     <div style={datoFilaStyle}>
       <span style={datoEtiquetaStyle}>{etiqueta}</span>
       <strong style={datoValorStyle}>{valor}</strong>
-    </div>
-  );
-}
-
-function ConteoEliminar({
-  titulo,
-  valor,
-}: {
-  titulo: string;
-  valor: number;
-}) {
-  return (
-    <div style={conteoEliminarStyle}>
-      <span style={conteoEliminarTituloStyle}>{titulo}</span>
-      <strong style={conteoEliminarValorStyle}>{valor}</strong>
     </div>
   );
 }
@@ -1445,127 +1153,6 @@ const mensajeStyle: React.CSSProperties = {
   color: "#175cd3",
   fontSize: "13px",
   fontWeight: "600",
-};
-
-const zonaPeligroStyle: React.CSSProperties = {
-  background: "#fffafa",
-  border: "1px solid #fecdca",
-  borderRadius: "18px",
-  padding: "clamp(18px, 4vw, 26px)",
-  boxShadow: "0 6px 20px rgba(180,35,24,0.06)",
-  marginBottom: "24px",
-};
-
-const peligroEtiquetaStyle: React.CSSProperties = {
-  margin: "0 0 6px",
-  color: "#b42318",
-  fontSize: "11px",
-  fontWeight: "800",
-  letterSpacing: "0.8px",
-};
-
-const peligroTituloStyle: React.CSSProperties = {
-  margin: 0,
-  color: "#7a271a",
-  fontSize: "20px",
-};
-
-const peligroTextoStyle: React.CSSProperties = {
-  margin: "8px 0 18px",
-  color: "#667085",
-  fontSize: "13px",
-  lineHeight: 1.6,
-  maxWidth: "820px",
-};
-
-const prepararEliminarStyle: React.CSSProperties = {
-  border: "1px solid #fecdca",
-  background: "#ffffff",
-  color: "#b42318",
-  borderRadius: "9px",
-  padding: "10px 14px",
-  fontWeight: "700",
-  cursor: "pointer",
-};
-
-const confirmacionEliminarStyle: React.CSSProperties = {
-  marginTop: "10px",
-  padding: "16px",
-  borderRadius: "13px",
-  background: "#ffffff",
-  border: "1px solid #fecdca",
-};
-
-const conteosEliminarGridStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns:
-    "repeat(auto-fit, minmax(min(100%, 130px), 1fr))",
-  gap: "9px",
-  marginBottom: "16px",
-};
-
-const conteoEliminarStyle: React.CSSProperties = {
-  padding: "11px",
-  background: "#f9fafb",
-  borderRadius: "10px",
-  border: "1px solid #eaecf0",
-};
-
-const conteoEliminarTituloStyle: React.CSSProperties = {
-  display: "block",
-  color: "#667085",
-  fontSize: "11px",
-};
-
-const conteoEliminarValorStyle: React.CSSProperties = {
-  display: "block",
-  marginTop: "4px",
-  color: "#101828",
-  fontSize: "20px",
-};
-
-const advertenciaEliminarStyle: React.CSSProperties = {
-  margin: "0 0 10px",
-  color: "#7a271a",
-  fontSize: "13px",
-  lineHeight: 1.5,
-};
-
-const confirmacionInputStyle: React.CSSProperties = {
-  width: "100%",
-  maxWidth: "520px",
-  padding: "10px 12px",
-  border: "1px solid #fda29b",
-  borderRadius: "9px",
-  background: "#ffffff",
-  color: "#101828",
-  fontSize: "13px",
-};
-
-const botonesEliminarStyle: React.CSSProperties = {
-  display: "flex",
-  gap: "10px",
-  flexWrap: "wrap",
-  marginTop: "14px",
-};
-
-const cancelarEliminarStyle: React.CSSProperties = {
-  border: "1px solid #d0d5dd",
-  background: "#ffffff",
-  color: "#344054",
-  borderRadius: "9px",
-  padding: "10px 14px",
-  fontWeight: "700",
-  cursor: "pointer",
-};
-
-const eliminarDefinitivoStyle: React.CSSProperties = {
-  border: "1px solid #b42318",
-  background: "#b42318",
-  color: "#ffffff",
-  borderRadius: "9px",
-  padding: "10px 14px",
-  fontWeight: "700",
 };
 
 const errorStyle: React.CSSProperties = {
