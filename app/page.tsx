@@ -1,5 +1,32 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+
+const supabase = createClient();
+
+// Publicidad preparada para futuro. Mantener en false hasta tener un anunciante activo.
+const MOSTRAR_ESPACIOS_PUBLICITARIOS = false;
+
+type NegocioPublicado = {
+  id: string;
+  business_name: string;
+  slug: string;
+  description: string | null;
+  province: string | null;
+  canton: string | null;
+  district: string | null;
+  logo_url: string | null;
+  cover_url: string | null;
+  booking_enabled: boolean;
+};
+
+function ubicacionNegocio(negocio: NegocioPublicado) {
+  const partes = [negocio.district, negocio.canton, negocio.province].filter(Boolean);
+  return partes.length > 0 ? partes.join(", ") : "Costa Rica";
+}
 
 const features = [
   {
@@ -84,6 +111,116 @@ const steps = [
 ];
 
 export default function Home() {
+  const [negociosPublicados, setNegociosPublicados] = useState<NegocioPublicado[]>([]);
+  const [cargandoNegocios, setCargandoNegocios] = useState(true);
+  const [errorNegocios, setErrorNegocios] = useState("");
+  const [indiceCarrusel, setIndiceCarrusel] = useState(0);
+  const [pausarCarrusel, setPausarCarrusel] = useState(false);
+
+  useEffect(() => {
+    cargarNegociosPublicados();
+  }, []);
+
+  useEffect(() => {
+    if (negociosPublicados.length <= 5 || pausarCarrusel) return;
+
+    const timer = window.setInterval(() => {
+      setIndiceCarrusel((actual) =>
+        negociosPublicados.length > 0
+          ? (actual + 1) % negociosPublicados.length
+          : 0
+      );
+    }, 4500);
+
+    return () => window.clearInterval(timer);
+  }, [negociosPublicados.length, pausarCarrusel]);
+
+  async function cargarNegociosPublicados() {
+    setCargandoNegocios(true);
+    setErrorNegocios("");
+
+    try {
+      const { data: publicaciones, error: publicacionesError } = await supabase
+        .from("business_settings")
+        .select("business_id, booking_enabled")
+        .eq("is_published", true);
+
+      if (publicacionesError) throw publicacionesError;
+
+      const publicados = new Map<string, boolean>();
+      for (const item of publicaciones || []) {
+        publicados.set(item.business_id, Boolean(item.booking_enabled));
+      }
+
+      const businessIds = Array.from(publicados.keys());
+
+      if (businessIds.length === 0) {
+        setNegociosPublicados([]);
+        return;
+      }
+
+      const { data: negociosData, error: negociosError } = await supabase
+        .from("businesses")
+        .select(`
+          id,
+          business_name,
+          slug,
+          description,
+          province,
+          canton,
+          district,
+          logo_url,
+          cover_url
+        `)
+        .in("id", businessIds)
+        .order("business_name", { ascending: true });
+
+      if (negociosError) throw negociosError;
+
+      const lista: NegocioPublicado[] = (negociosData || []).map((negocio) => ({
+        ...negocio,
+        booking_enabled: publicados.get(negocio.id) ?? false,
+      }));
+
+      setNegociosPublicados(lista);
+    } catch (error) {
+      console.error("Error cargando negocios publicados:", error);
+      setErrorNegocios("No fue posible cargar los negocios publicados en este momento.");
+    } finally {
+      setCargandoNegocios(false);
+    }
+  }
+
+  const cantidadCarrusel = Math.min(5, negociosPublicados.length);
+  const negociosCarrusel = Array.from({ length: cantidadCarrusel }, (_, offset) =>
+    negociosPublicados.length > 0
+      ? negociosPublicados[(indiceCarrusel + offset) % negociosPublicados.length]
+      : null
+  ).filter(Boolean) as NegocioPublicado[];
+
+  const claseAnchoTarjeta =
+    negociosPublicados.length >= 5
+      ? "xl:w-[18.5%]"
+      : negociosPublicados.length === 4
+      ? "xl:w-[23.5%]"
+      : negociosPublicados.length === 3
+      ? "xl:w-[31.5%]"
+      : negociosPublicados.length === 2
+      ? "xl:w-[48.5%]"
+      : "xl:w-full";
+
+  function avanzarCarrusel() {
+    if (negociosPublicados.length <= 5) return;
+    setIndiceCarrusel((actual) => (actual + 1) % negociosPublicados.length);
+  }
+
+  function retrocederCarrusel() {
+    if (negociosPublicados.length <= 5) return;
+    setIndiceCarrusel((actual) =>
+      (actual - 1 + negociosPublicados.length) % negociosPublicados.length
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[#F6F9FF] text-[#042A6B]">
       <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur">
@@ -106,7 +243,7 @@ export default function Home() {
             <a href="#como-funciona" className="transition hover:text-slate-950">
               Cómo funciona
             </a>
-            <a href="#negocios" className="transition hover:text-slate-950">
+            <a href="#negocios-publicados" className="transition hover:text-slate-950">
               Explorar negocios
             </a>
             <a href="#publicar" className="transition hover:text-slate-950">
@@ -203,7 +340,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="funciones" className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
+      <section id="funciones" className="scroll-mt-24 mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-sm font-black uppercase tracking-[0.2em] text-[#0066FF]">Todo en un solo lugar</p>
           <h2 className="mt-4 text-4xl font-black tracking-tight md:text-5xl">
@@ -230,7 +367,182 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="negocios" className="bg-[#042A6B] py-20 text-white lg:py-24">
+      <section id="negocios-publicados" className="scroll-mt-24 bg-white py-20 lg:py-24">
+        <div className="mx-auto max-w-7xl px-5 lg:px-8">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-sm font-black uppercase tracking-[0.2em] text-[#0066FF]">Negocios en CitaTica</p>
+              <h2 className="mt-4 text-4xl font-black tracking-tight md:text-5xl">
+                Descubra negocios y reserve directamente.
+              </h2>
+              <p className="mt-5 text-lg leading-8 text-slate-600">
+                Aquí aparecen los negocios que han sido publicados en CitaTica y están disponibles para sus clientes.
+              </p>
+            </div>
+            <a
+              href="#negocios"
+              className="inline-flex w-fit items-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-[#042A6B] transition hover:bg-slate-50"
+            >
+              Explorar por categoría
+            </a>
+          </div>
+
+          {cargandoNegocios ? (
+            <div className="mt-10 flex gap-5 overflow-hidden">
+              {[1, 2, 3, 4, 5].map((item) => (
+                <div
+                  key={item}
+                  className="h-[390px] w-[85%] shrink-0 animate-pulse rounded-3xl bg-slate-100 sm:w-[48%] lg:w-[31.5%] xl:w-[18.5%]"
+                />
+              ))}
+            </div>
+          ) : errorNegocios ? (
+            <div className="mt-10 rounded-3xl border border-amber-200 bg-amber-50 p-6 text-amber-900">
+              {errorNegocios}
+            </div>
+          ) : negociosPublicados.length === 0 ? (
+            <div className="mt-10 rounded-3xl border border-slate-200 bg-[#F6F9FF] p-8 text-center">
+              <h3 className="text-xl font-black">Próximamente más negocios</h3>
+              <p className="mt-2 text-slate-600">Los negocios publicados aparecerán aquí automáticamente.</p>
+            </div>
+          ) : (
+            <div
+              className="mt-12"
+              onMouseEnter={() => setPausarCarrusel(true)}
+              onMouseLeave={() => setPausarCarrusel(false)}
+            >
+              <div className="mb-5 flex items-center justify-between gap-4">
+                <p className="text-sm font-semibold text-slate-500">
+                  {negociosPublicados.length > 5
+                    ? `Mostrando 5 de ${negociosPublicados.length} negocios`
+                    : `${negociosPublicados.length} negocio${negociosPublicados.length === 1 ? "" : "s"} publicado${negociosPublicados.length === 1 ? "" : "s"}`}
+                </p>
+
+                {negociosPublicados.length > 5 ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={retrocederCarrusel}
+                      aria-label="Ver negocios anteriores"
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-lg font-black text-[#042A6B] shadow-sm transition hover:bg-slate-50"
+                    >
+                      ←
+                    </button>
+                    <button
+                      type="button"
+                      onClick={avanzarCarrusel}
+                      aria-label="Ver más negocios"
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-lg font-black text-[#042A6B] shadow-sm transition hover:bg-slate-50"
+                    >
+                      →
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="overflow-hidden">
+                <div className="flex gap-5">
+                  {negociosCarrusel.map((negocio) => (
+                    <Link
+                      key={negocio.id}
+                      href={`/reservar/${negocio.slug}`}
+                      className={`group flex w-[85%] shrink-0 flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-500 hover:-translate-y-1 hover:shadow-xl sm:w-[48%] lg:w-[31.5%] ${claseAnchoTarjeta}`}
+                    >
+                      <div
+                        className="relative shrink-0 overflow-hidden bg-gradient-to-br from-[#DDEEFF] to-[#F6F9FF]"
+                        style={{ height: "220px" }}
+                      >
+                        {negocio.cover_url || negocio.logo_url ? (
+                          <img
+                            src={negocio.cover_url || negocio.logo_url || ""}
+                            alt={negocio.business_name}
+                            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          />
+                        ) : (
+                          <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-[#EEF7FF] to-white px-6 text-center">
+                            <Image
+                              src="/brand/citatica-logo.png"
+                              alt="CitaTica"
+                              width={170}
+                              height={56}
+                              className="h-auto w-[140px] opacity-70"
+                            />
+                            <span className="text-sm font-bold text-slate-400">
+                              {negocio.business_name}
+                            </span>
+                          </div>
+                        )}
+
+                        {negocio.cover_url && negocio.logo_url ? (
+                          <div className="absolute bottom-4 left-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-white shadow-md">
+                            <img
+                              src={negocio.logo_url}
+                              alt={`Logo de ${negocio.business_name}`}
+                              className="h-full w-full object-contain"
+                            />
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div className="flex flex-1 flex-col p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <h3 className="line-clamp-2 text-lg font-black leading-6 text-[#042A6B]">
+                              {negocio.business_name}
+                            </h3>
+                            <p className="mt-1 line-clamp-1 text-xs font-medium text-slate-500">
+                              {ubicacionNegocio(negocio)}
+                            </p>
+                          </div>
+                          <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                            negocio.booking_enabled
+                              ? "bg-emerald-50 text-emerald-700"
+                              : "bg-slate-100 text-slate-500"
+                          }`}>
+                            {negocio.booking_enabled ? "Reservas activas" : "Ver negocio"}
+                          </span>
+                        </div>
+
+                        <p className="mt-4 line-clamp-2 min-h-[44px] text-sm leading-5 text-slate-600">
+                          {negocio.description || "Conozca sus servicios, profesionales y disponibilidad en CitaTica."}
+                        </p>
+
+                        <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4">
+                          <span className="text-sm font-black text-[#0066FF]">Ver y reservar</span>
+                          <span className="text-xl text-[#0066FF] transition group-hover:translate-x-1">→</span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {negociosPublicados.length > 5 ? (
+                <div className="mt-5 flex justify-center gap-1.5">
+                  {negociosPublicados.map((negocio, index) => (
+                    <button
+                      key={negocio.id}
+                      type="button"
+                      onClick={() => setIndiceCarrusel(index)}
+                      aria-label={`Ir al negocio ${index + 1}`}
+                      className={`h-2 rounded-full transition-all ${
+                        index === indiceCarrusel
+                          ? "w-6 bg-[#0066FF]"
+                          : "w-2 bg-slate-300 hover:bg-slate-400"
+                      }`}
+                    />
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          <AdSlot slot="home-negocios-banner" />
+        </div>
+      </section>
+
+      <section id="negocios" className="scroll-mt-24 bg-[#042A6B] py-20 text-white lg:py-24">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
           <div className="max-w-3xl">
             <p className="text-sm font-black uppercase tracking-[0.2em] text-[#22C1F6]">Para muchos tipos de negocio</p>
@@ -271,7 +583,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="como-funciona" className="bg-white py-20 lg:py-24">
+      <section id="como-funciona" className="scroll-mt-24 bg-white py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-black uppercase tracking-[0.2em] text-[#0066FF]">Así funciona</p>
@@ -335,7 +647,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="publicar" className="border-y border-slate-200 bg-white py-20 lg:py-24">
+      <section id="publicar" className="scroll-mt-24 border-y border-slate-200 bg-white py-20 lg:py-24">
         <div className="mx-auto grid max-w-7xl gap-10 px-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
           <div>
             <p className="text-sm font-black uppercase tracking-[0.2em] text-[#0066FF]">Para emprendedores</p>
@@ -400,6 +712,10 @@ export default function Home() {
         </div>
       </section>
 
+      <div className="mx-auto max-w-7xl px-5 pb-12 lg:px-8">
+        <AdSlot slot="home-footer-banner" compact />
+      </div>
+
       <footer className="border-t border-slate-200 bg-[#031f50] text-white">
         <div className="mx-auto max-w-7xl px-5 py-14 lg:px-8">
           <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
@@ -456,5 +772,29 @@ export default function Home() {
         </div>
       </footer>
     </main>
+  );
+}
+
+
+function AdSlot({ slot, compact = false }: { slot: string; compact?: boolean }) {
+  if (!MOSTRAR_ESPACIOS_PUBLICITARIOS) return null;
+
+  return (
+    <aside
+      data-ad-slot={slot}
+      aria-label="Espacio publicitario"
+      className={`mt-12 flex items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-slate-50 text-center ${
+        compact ? "min-h-[110px] px-6 py-6" : "min-h-[140px] px-6 py-8"
+      }`}
+    >
+      <div>
+        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">
+          Espacio publicitario
+        </p>
+        <p className="mt-2 text-sm font-semibold text-slate-500">
+          Área reservada para futuros patrocinadores o campañas de CitaTica.
+        </p>
+      </div>
+    </aside>
   );
 }
