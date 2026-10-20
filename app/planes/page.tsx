@@ -528,8 +528,25 @@ export default async function PlanesPage() {
               flexWrap: "wrap",
             }}
           >
-            <span>Términos y condiciones</span>
-            <span>Política de privacidad</span>
+            <Link
+              href="/terminos"
+              style={{
+                color: "#667085",
+                textDecoration: "none",
+              }}
+            >
+              Términos y condiciones
+            </Link>
+
+            <Link
+              href="/privacidad"
+              style={{
+                color: "#667085",
+                textDecoration: "none",
+              }}
+            >
+              Política de privacidad
+            </Link>
           </div>
         </div>
       </footer>

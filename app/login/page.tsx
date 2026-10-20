@@ -2,13 +2,30 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<PantallaCargaLogin />}>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = useMemo(() => createClient(), []);
+
+  const nextParam = searchParams.get("next");
+  const nextDestino =
+    nextParam &&
+    nextParam.startsWith("/") &&
+    !nextParam.startsWith("//")
+      ? nextParam
+      : "";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +39,25 @@ export default function LoginPage() {
     setCargandoGoogle(true);
 
     try {
-      const redirectTo = `${window.location.origin}/auth/callback`;
+      if (nextDestino) {
+        window.sessionStorage.setItem(
+          "citatica:auth-next",
+          nextDestino
+        );
+      } else {
+        window.sessionStorage.removeItem("citatica:auth-next");
+      }
+
+      const callbackUrl = new URL(
+        "/auth/callback",
+        window.location.origin
+      );
+
+      if (nextDestino) {
+        callbackUrl.searchParams.set("next", nextDestino);
+      }
+
+      const redirectTo = callbackUrl.toString();
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -93,7 +128,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.replace("/panel");
+      router.replace(nextDestino || "/panel");
       router.refresh();
     } catch (error) {
       console.error("Error al iniciar sesión:", error);
@@ -383,7 +418,11 @@ export default function LoginPage() {
         >
           ¿No tienes una cuenta?{" "}
           <Link
-            href="/registro"
+            href={
+              nextDestino
+                ? `/registro?next=${encodeURIComponent(nextDestino)}`
+                : "/registro"
+            }
             style={{
               color: "#0066FF",
               fontWeight: "800",
@@ -393,6 +432,31 @@ export default function LoginPage() {
             Crear cuenta
           </Link>
         </p>
+      </div>
+    </main>
+  );
+}
+
+function PantallaCargaLogin() {
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#F6F9FF",
+        fontFamily:
+          "var(--font-geist-sans), Arial, sans-serif",
+      }}
+    >
+      <div
+        style={{
+          color: "#667085",
+          fontWeight: "700",
+        }}
+      >
+        Cargando...
       </div>
     </main>
   );

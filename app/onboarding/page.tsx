@@ -28,6 +28,59 @@ type Plan = {
   annual_price: number;
 };
 
+const CATEGORIAS_AUTORIZADAS_BNCR = [
+  "Barbería",
+  "Peluquería",
+  "Uñas",
+  "Pestañas",
+  "Maquillaje",
+  "Estética",
+  "Spa",
+  "Masajes",
+  "Tatuajes",
+  "Piercing",
+  "Entrenamiento personal",
+  "Bienestar",
+  "Otro",
+];
+
+const ACTIVIDADES_NO_ACEPTABLES_BNCR = [
+  "Fraudes",
+  "Evasión fiscal",
+  "Narcotráfico",
+  "Arbitraje internacional de divisas",
+  "Casas de apuesta por Internet (sportbooks, entre otros)",
+  "Operación transaccional relacionada con ingreso o salida de fondos con origen en negocios asociados a Casas de Apuestas por Internet (sportbooks, entre otros)",
+  "Extorsiones",
+  "Secuestros",
+  "Robos",
+  "Remisión y pago de remesas familiares, efectuados por otros operadores.",
+  "Negoción informal de divisas.",
+  "Homicidios",
+  "Prostitución en general y por cualquier medio.",
+  "Actos terroristas, financiamiento al terrorismo",
+  "Casas de cambio no reguladas",
+  "Trata de personas",
+  "Corporaciones financieras offshore o entidades financieras localizadas en paraísos fiscales.",
+  "Tráfico ilegal de armas",
+  "Piratería y contrabando",
+  "Operación transaccional, administración o desarrollo de tecnologías relacionadas con criptomonedas o monedas virtuales que no permitan conocer al beneficiario de estas y la actividad económica o acto comercial que origina los fondos.",
+  "Soborno, corrupción",
+  "Lavado de dinero",
+  "Delitos informáticos",
+  "Negocios de luz roja (por ejemplo: salas de masaje con fines sexuales, night club, casas de citas, establecimientos afines) promoción y venta de pornografía",
+  "Sujetos obligados por cualquiera de las Superintendencias que ofrecen sus cuentas y plataforma con el BNCR, a sus propios clientes para realizar transacciones diversas.",
+  "Servicios postales o de entrega rápida para movilizar dinero en efectivo y/o Títulos valores",
+];
+
+function normalizarTexto(texto: string) {
+  return texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
 export default function OnboardingPage() {
   return (
     <Suspense fallback={<PantallaCarga />}>
@@ -75,6 +128,32 @@ function OnboardingContent() {
   const [cargandoPagina, setCargandoPagina] =
     useState(true);
 
+  const [aceptaTerminos, setAceptaTerminos] =
+    useState(false);
+
+  const [otraActividad, setOtraActividad] =
+    useState("");
+
+  const [aceptaDeclaracionBncr, setAceptaDeclaracionBncr] =
+    useState(false);
+
+  const categoriaSeleccionada = useMemo(
+    () =>
+      categorias.find(
+        (categoria) => categoria.id === categoriaId
+      ) || null,
+    [categorias, categoriaId]
+  );
+
+  const esCategoriaOtro =
+    normalizarTexto(categoriaSeleccionada?.name || "") ===
+    "otro";
+
+  const cumplimientoBncrCompleto =
+    !esCategoriaOtro ||
+    (otraActividad.trim().length >= 5 &&
+      aceptaDeclaracionBncr);
+
   useEffect(() => {
     async function cargarPagina() {
       setCargandoPagina(true);
@@ -87,7 +166,14 @@ function OnboardingContent() {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        router.push("/login");
+        const queryActual = searchParams.toString();
+        const destino = queryActual
+          ? `/onboarding?${queryActual}`
+          : "/onboarding";
+
+        router.push(
+          `/login?next=${encodeURIComponent(destino)}`
+        );
         return;
       }
 
@@ -121,7 +207,26 @@ function OnboardingContent() {
         return;
       }
 
-      setCategorias(categoriasData || []);
+      const ordenCategorias = new Map(
+        CATEGORIAS_AUTORIZADAS_BNCR.map(
+          (nombre, index) => [normalizarTexto(nombre), index]
+        )
+      );
+
+      const categoriasPermitidas = (categoriasData || [])
+        .filter((categoria) =>
+          ordenCategorias.has(normalizarTexto(categoria.name))
+        )
+        .sort((a, b) => {
+          const ordenA =
+            ordenCategorias.get(normalizarTexto(a.name)) ?? 999;
+          const ordenB =
+            ordenCategorias.get(normalizarTexto(b.name)) ?? 999;
+
+          return ordenA - ordenB;
+        });
+
+      setCategorias(categoriasPermitidas);
 
       if (codigoPlan) {
         const { data: planData, error: planError } =
@@ -179,6 +284,30 @@ function OnboardingContent() {
 
     if (!categoriaId) {
       setMensaje("Seleccione una categoría.");
+      setTipoMensaje("error");
+      return;
+    }
+
+    if (esCategoriaOtro && otraActividad.trim().length < 5) {
+      setMensaje(
+        "Describa claramente la actividad económica de su negocio para utilizar la categoría Otro."
+      );
+      setTipoMensaje("error");
+      return;
+    }
+
+    if (esCategoriaOtro && !aceptaDeclaracionBncr) {
+      setMensaje(
+        "Debe confirmar que la actividad económica no corresponde a ninguna actividad no aceptable por el BNCR."
+      );
+      setTipoMensaje("error");
+      return;
+    }
+
+    if (!aceptaTerminos) {
+      setMensaje(
+        "Debe leer y aceptar los Términos y Condiciones para continuar."
+      );
       setTipoMensaje("error");
       return;
     }
@@ -260,6 +389,28 @@ function OnboardingContent() {
     }
 
     const businessId = membresiaCreada.business_id;
+
+    if (esCategoriaOtro) {
+      const { error: declaracionError } = await supabase
+        .from("businesses")
+        .update({
+          other_business_activity: otraActividad.trim(),
+          bncr_activity_declaration: true,
+          bncr_activity_declaration_at:
+            new Date().toISOString(),
+        })
+        .eq("id", businessId)
+        .eq("owner_user_id", user.id);
+
+      if (declaracionError) {
+        setMensaje(
+          "El negocio se creó, pero no pudimos guardar la declaración requerida para la categoría Otro. No continúe al pago y contacte soporte."
+        );
+        setTipoMensaje("error");
+        setCargando(false);
+        return;
+      }
+    }
 
     window.localStorage.setItem(
       "citatica:selected-plan",
@@ -603,9 +754,22 @@ function OnboardingContent() {
 
             <select
               value={categoriaId}
-              onChange={(e) =>
-                setCategoriaId(e.target.value)
-              }
+              onChange={(e) => {
+                const nuevoId = e.target.value;
+                setCategoriaId(nuevoId);
+
+                const nuevaCategoria = categorias.find(
+                  (categoria) => categoria.id === nuevoId
+                );
+
+                if (
+                  normalizarTexto(nuevaCategoria?.name || "") !==
+                  "otro"
+                ) {
+                  setOtraActividad("");
+                  setAceptaDeclaracionBncr(false);
+                }
+              }}
               required
               style={inputStyle}
             >
@@ -622,6 +786,159 @@ function OnboardingContent() {
                 </option>
               ))}
             </select>
+
+            {esCategoriaOtro && (
+              <div
+                style={{
+                  marginTop: "18px",
+                  padding: "18px",
+                  border: "1px solid #F5D785",
+                  borderRadius: "14px",
+                  background: "#FFFBEB",
+                }}
+              >
+                <div
+                  style={{
+                    color: "#7A5700",
+                    fontWeight: "800",
+                    fontSize: "14px",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Categoría “Otro”
+                </div>
+
+                <p
+                  style={{
+                    margin: "0 0 16px",
+                    color: "#7A5700",
+                    fontSize: "14px",
+                    lineHeight: "1.6",
+                  }}
+                >
+                  Esta categoría únicamente puede utilizarse para
+                  actividades permitidas por el Banco Nacional de
+                  Costa Rica. Describa claramente la actividad
+                  económica que realiza su negocio.
+                </p>
+
+                <label
+                  style={{
+                    ...labelStyle,
+                    marginTop: 0,
+                    color: "#5F4500",
+                  }}
+                >
+                  Describa su actividad económica
+                </label>
+
+                <textarea
+                  value={otraActividad}
+                  onChange={(e) =>
+                    setOtraActividad(e.target.value)
+                  }
+                  placeholder="Ej. reparación de electrodomésticos, fotografía, clases particulares..."
+                  required
+                  minLength={5}
+                  maxLength={300}
+                  disabled={cargando}
+                  style={textareaStyle}
+                />
+
+                <div
+                  style={{
+                    marginTop: "8px",
+                    textAlign: "right",
+                    color: "#8A6D1D",
+                    fontSize: "12px",
+                  }}
+                >
+                  {otraActividad.length}/300
+                </div>
+
+                <details
+                  style={{
+                    marginTop: "16px",
+                    borderTop: "1px solid #F5D785",
+                    paddingTop: "14px",
+                  }}
+                >
+                  <summary
+                    style={{
+                      cursor: "pointer",
+                      color: "#7A5700",
+                      fontWeight: "800",
+                      fontSize: "14px",
+                    }}
+                  >
+                    Ver actividades económicas no aceptables por el
+                    BNCR
+                  </summary>
+
+                  <ul
+                    style={{
+                      margin: "14px 0 0",
+                      paddingLeft: "22px",
+                      color: "#694F00",
+                      fontSize: "13px",
+                      lineHeight: "1.6",
+                    }}
+                  >
+                    {ACTIVIDADES_NO_ACEPTABLES_BNCR.map(
+                      (actividad) => (
+                        <li
+                          key={actividad}
+                          style={{ marginBottom: "7px" }}
+                        >
+                          {actividad}
+                        </li>
+                      )
+                    )}
+                  </ul>
+                </details>
+
+                <label
+                  style={{
+                    display: "flex",
+                    gap: "10px",
+                    alignItems: "flex-start",
+                    cursor: "pointer",
+                    marginTop: "18px",
+                    paddingTop: "16px",
+                    borderTop: "1px solid #F5D785",
+                    color: "#5F4500",
+                    fontSize: "13px",
+                    lineHeight: "1.6",
+                    fontWeight: "600",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={aceptaDeclaracionBncr}
+                    onChange={(e) =>
+                      setAceptaDeclaracionBncr(
+                        e.target.checked
+                      )
+                    }
+                    disabled={cargando}
+                    style={{
+                      marginTop: "3px",
+                      width: "18px",
+                      height: "18px",
+                      flexShrink: 0,
+                    }}
+                  />
+
+                  <span>
+                    Declaro que la actividad económica de mi negocio
+                    no corresponde a ninguna de las actividades no
+                    aceptables indicadas por el Banco Nacional de
+                    Costa Rica y que la información suministrada es
+                    verdadera.
+                  </span>
+                </label>
+              </div>
+            )}
 
             <label style={labelStyle}>
               Teléfono
@@ -651,24 +968,88 @@ function OnboardingContent() {
               style={inputStyle}
             />
 
+            <div
+              style={{
+                marginTop: "24px",
+                padding: "16px",
+                border: "1px solid #D7E9FF",
+                borderRadius: "12px",
+                background: "#F8FBFF",
+              }}
+            >
+              <label
+                style={{
+                  display: "flex",
+                  gap: "10px",
+                  alignItems: "flex-start",
+                  cursor: "pointer",
+                  color: "#475467",
+                  fontSize: "14px",
+                  lineHeight: "1.6",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={aceptaTerminos}
+                  onChange={(e) =>
+                    setAceptaTerminos(e.target.checked)
+                  }
+                  disabled={cargando}
+                  style={{
+                    marginTop: "4px",
+                    width: "18px",
+                    height: "18px",
+                    flexShrink: 0,
+                  }}
+                />
+
+                <span>
+                  He leído y acepto los{" "}
+                  <Link
+                    href="/terminos"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: "#0066FF",
+                      fontWeight: "800",
+                    }}
+                  >
+                    Términos y Condiciones
+                  </Link>{" "}
+                  vigentes de CitaTica.
+                </span>
+              </label>
+            </div>
+
             <button
               type="submit"
-              disabled={cargando || !codigoPlan}
+              disabled={
+                cargando ||
+                !codigoPlan ||
+                !aceptaTerminos ||
+                !cumplimientoBncrCompleto
+              }
               style={{
                 width: "100%",
                 padding: "16px",
-                marginTop: "26px",
+                marginTop: "18px",
                 border: "none",
                 borderRadius: "12px",
                 background:
-                  cargando || !codigoPlan
+                  cargando ||
+                  !codigoPlan ||
+                  !aceptaTerminos ||
+                  !cumplimientoBncrCompleto
                     ? "#98A2B3"
                     : "#0066FF",
                 color: "#FFFFFF",
                 fontSize: "16px",
                 fontWeight: "800",
                 cursor:
-                  cargando || !codigoPlan
+                  cargando ||
+                  !codigoPlan ||
+                  !aceptaTerminos ||
+                  !cumplimientoBncrCompleto
                     ? "not-allowed"
                     : "pointer",
               }}
@@ -774,6 +1155,22 @@ const labelStyle: React.CSSProperties = {
   fontWeight: "700",
   color: "#344054",
   fontSize: "14px",
+};
+
+const textareaStyle: React.CSSProperties = {
+  width: "100%",
+  minHeight: "110px",
+  boxSizing: "border-box",
+  padding: "14px 15px",
+  border: "1px solid #D0D5DD",
+  borderRadius: "11px",
+  fontSize: "15px",
+  lineHeight: "1.5",
+  background: "#FFFFFF",
+  color: "#101828",
+  outline: "none",
+  resize: "vertical",
+  fontFamily: "inherit",
 };
 
 const inputStyle: React.CSSProperties = {
