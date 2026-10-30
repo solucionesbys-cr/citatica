@@ -306,7 +306,7 @@ function OnboardingContent() {
 
     if (!aceptaTerminos) {
       setMensaje(
-        "Debe leer y aceptar los Términos y Condiciones para continuar."
+        "Debe leer y aceptar la Información Legal de CitaTica para continuar."
       );
       setTipoMensaje("error");
       return;
@@ -1004,9 +1004,9 @@ function OnboardingContent() {
                 />
 
                 <span>
-                  He leído y acepto los{" "}
+                  He leído, comprendido y acepto la{" "}
                   <Link
-                    href="/terminos"
+                    href="/legal"
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
@@ -1014,9 +1014,11 @@ function OnboardingContent() {
                       fontWeight: "800",
                     }}
                   >
-                    Términos y Condiciones
+                    Información Legal de CitaTica
                   </Link>{" "}
-                  vigentes de CitaTica.
+                  que contiene en una sola página los Términos y
+                  Condiciones, la Política de Cancelaciones y
+                  Devoluciones y la Política de Privacidad.
                 </span>
               </label>
             </div>

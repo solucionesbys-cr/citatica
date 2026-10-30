@@ -755,10 +755,7 @@ export default function Home() {
             <div>
               <h3 className="font-black">Legal y ayuda</h3>
               <div className="mt-4 flex flex-col gap-3 text-sm text-slate-300">
-                <Link href="/terminos" className="hover:text-white">Términos y condiciones</Link>
-                <Link href="/privacidad" className="hover:text-white">Política de privacidad</Link>
-                <Link href="/cookies" className="hover:text-white">Política de cookies</Link>
-                <Link href="/cancelaciones-y-devoluciones" className="hover:text-white">Cancelaciones y devoluciones</Link>
+                <Link href="/legal" className="hover:text-white">Información Legal</Link>
                 <Link href="/preguntas-frecuentes" className="hover:text-white">Preguntas frecuentes</Link>
                 <Link href="/contacto" className="hover:text-white">Contacto y soporte</Link>
               </div>

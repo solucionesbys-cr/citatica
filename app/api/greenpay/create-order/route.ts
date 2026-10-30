@@ -158,6 +158,7 @@ console.log("GREENPAY TERMINAL:", terminal);
 console.log("GREENPAY CURRENCY:", currency);
 console.log("GREENPAY AMOUNT:", amount);
 
+
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
