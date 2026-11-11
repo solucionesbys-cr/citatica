@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
 const supabase = createClient();
@@ -90,9 +90,11 @@ const ESTADOS: {
 export default function DetalleCitaPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const idParam = params?.id;
   const citaId = Array.isArray(idParam) ? idParam[0] : idParam;
+  const abrirReprogramarDesdeAgenda = searchParams.get("reprogramar") === "1";
 
   const [cita, setCita] = useState<Cita | null>(null);
   const [cliente, setCliente] = useState<Cliente | null>(null);
@@ -129,6 +131,14 @@ export default function DetalleCitaPage() {
 
     cargarCita();
   }, [citaId]);
+
+  useEffect(() => {
+    if (!abrirReprogramarDesdeAgenda || !cita) return;
+    if (esEstadoFinal(cita.status)) return;
+    if (mostrarReprogramar) return;
+
+    abrirReprogramacion();
+  }, [abrirReprogramarDesdeAgenda, cita]);
 
   async function cargarCita() {
     setCargando(true);
@@ -765,6 +775,10 @@ export default function DetalleCitaPage() {
 
     setMostrarReprogramar(false);
 
+    if (abrirReprogramarDesdeAgenda) {
+      router.replace(`/panel/agenda/${cita.id}`);
+    }
+
     setMensaje("Cita reprogramada correctamente.");
 
     setGuardando(false);
@@ -1113,9 +1127,13 @@ export default function DetalleCitaPage() {
 
                   <button
                     type="button"
-                    onClick={() =>
-                      setMostrarReprogramar(false)
-                    }
+                    onClick={() => {
+                      setMostrarReprogramar(false);
+
+                      if (abrirReprogramarDesdeAgenda) {
+                        router.replace(`/panel/agenda/${cita.id}`);
+                      }
+                    }}
                     style={styles.botonSecundario}
                   >
                     Cerrar

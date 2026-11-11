@@ -2000,6 +2000,37 @@ function AgendaContent() {
                           type="button"
                           onClick={() =>
                             router.push(
+                              `/panel/agenda/${cita.id}?reprogramar=1`
+                            )
+                          }
+                          disabled={
+                            cita.status === "COMPLETED" ||
+                            cita.status === "CANCELLED" ||
+                            cita.status === "NO_SHOW"
+                          }
+                          style={{
+                            ...botonReprogramarCitaStyle,
+                            opacity:
+                              cita.status === "COMPLETED" ||
+                              cita.status === "CANCELLED" ||
+                              cita.status === "NO_SHOW"
+                                ? 0.5
+                                : 1,
+                            cursor:
+                              cita.status === "COMPLETED" ||
+                              cita.status === "CANCELLED" ||
+                              cita.status === "NO_SHOW"
+                                ? "not-allowed"
+                                : "pointer",
+                          }}
+                        >
+                          📅 Reprogramar
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            router.push(
                               `/panel/agenda/${cita.id}`
                             )
                           }
@@ -2421,6 +2452,16 @@ const estadoSelectStyle: React.CSSProperties = {
   color: "#344054",
 };
 
+
+const botonReprogramarCitaStyle: React.CSSProperties = {
+  border: "1px solid #b2ccff",
+  borderRadius: "8px",
+  padding: "8px 14px",
+  background: "#eff4ff",
+  color: "#1849a9",
+  fontWeight: "700",
+  cursor: "pointer",
+};
 const botonVerCitaStyle: React.CSSProperties = {
   border: "1px solid #d0d5dd",
   borderRadius: "8px",
