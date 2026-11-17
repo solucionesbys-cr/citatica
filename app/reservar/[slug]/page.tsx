@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import {
+  registrarPageView,
+  registrarVistaNegocio,
+  registrarInicioReserva,
+  registrarReservaCompletada,
+} from "@/lib/analytics";
 
 const supabase = createClient();
 
@@ -155,6 +161,10 @@ export default function ReservarPage() {
   const slugParam = params?.slug;
   const slug = Array.isArray(slugParam) ? slugParam[0] : slugParam;
 
+  const paginaRegistradaRef = useRef(false);
+  const negocioRegistradoRef = useRef(false);
+  const inicioReservaRegistradoRef = useRef(false);
+
   const [negocio, setNegocio] = useState<Negocio | null>(null);
 
   const [configuracion, setConfiguracion] =
@@ -208,6 +218,16 @@ export default function ReservarPage() {
     useState<ReservaConfirmada | null>(null);
 
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!slug || paginaRegistradaRef.current) return;
+
+    paginaRegistradaRef.current = true;
+
+    void registrarPageView({
+      businessSlug: slug,
+    });
+  }, [slug]);
 
   useEffect(() => {
     if (!slug) return;
@@ -282,6 +302,12 @@ export default function ReservarPage() {
 
     setNegocio(negocioData);
 
+    if (!negocioRegistradoRef.current) {
+      negocioRegistradoRef.current = true;
+
+      void registrarVistaNegocio(negocioData.slug);
+    }
+
     const { data: configuracionData, error: configuracionError } =
       await supabase
         .from("business_settings")
@@ -343,6 +369,12 @@ export default function ReservarPage() {
 
   async function seleccionarServicio(servicio: Servicio) {
     setServicioSeleccionado(servicio);
+
+    if (negocio && !inicioReservaRegistradoRef.current) {
+      inicioReservaRegistradoRef.current = true;
+
+      void registrarInicioReserva(negocio.slug);
+    }
 
     setProfesionalSeleccionado("");
 
@@ -781,6 +813,8 @@ export default function ReservarPage() {
 
       const resultado =
         typeof data === "string" ? JSON.parse(data) : data;
+
+      void registrarReservaCompletada(negocio.slug);
 
       setReservaConfirmada({
         clienteNombre: `${nombreCliente.trim()}${
