@@ -439,6 +439,13 @@ export default function AdminPage() {
               descripcion="Cuentas, negocios asociados y accesos."
               onClick={() => router.push("/admin/usuarios")}
             />
+
+            <Acceso
+              icono="📊"
+              titulo="Analítica"
+              descripcion="Visitantes, negocios vistos, reservas y conversiones."
+              onClick={() => router.push("/admin/analitica")}
+            />
           </div>
         </section>
 
